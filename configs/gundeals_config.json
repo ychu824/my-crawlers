@@ -1,0 +1,12 @@
+{
+    "name": "Gun Deals Crawler",
+    "url": "https://gun.deals/",
+    "use_playwright": true,
+    "wait_for_selector": ".tile--product",
+    "items_selector": ".tile--product",
+    "fields": {
+        "name": ".tile__title a",
+        "price": ".tile__price",
+        "link": ".tile__title a"
+    }
+}

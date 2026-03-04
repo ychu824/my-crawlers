@@ -1,0 +1,10 @@
+{
+    "name": "Generic Product Crawler",
+    "url": "https://example.com/products",
+    "items_selector": ".product-card",
+    "fields": {
+        "name": ".product-title",
+        "price": ".product-price",
+        "link": "a[href]"
+    }
+}
