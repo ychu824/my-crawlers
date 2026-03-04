@@ -189,3 +189,27 @@ python main.py --config configs/gundeals_config.json --search "Beretta M9" --out
 ## Configuration
 
 Each crawler has a corresponding JSON configuration file in the `configs/` directory. Customize the URL and extraction rules in these files to suit your needs.
+
+## Deployment to Azure VM
+
+This repository includes a GitHub Action to automate deployments to an Azure Virtual Machine.
+
+### Initial VM Setup
+
+1. SSH into your VM.
+2. Clone the repository into `/home/azureuser/my-crawlers`:
+   ```bash
+   cd /home/azureuser
+   git clone https://github.com/your-username/my-crawlers.git
+   ```
+3. Ensure Node.js and Python 3 are installed on the VM.
+
+### GitHub Secrets
+
+To enable automatic deployments, you must configure the following secrets in your GitHub repository:
+
+- `VM_HOST`: The IP address or hostname of your Azure VM.
+- `VM_USERNAME`: The SSH username (e.g., `azureuser`).
+- `VM_SSH_KEY`: Your private SSH key.
+
+Once configured, any push to the `main` branch will trigger a deployment. The deployment script (`deploy.sh`) will pull the latest code, update dependencies, and restart the `my-crawlers.service` systemd service.
