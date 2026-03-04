@@ -1,7 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 import json
-from typing import List, Dict, Any
+import re
+from typing import List, Dict, Any, Union
 from urllib.parse import urljoin
 from playwright.sync_api import sync_playwright
 
@@ -42,28 +43,40 @@ class GenericCrawler:
             browser.close()
             return content
 
-    def _extract_field(self, element, field_name, selector) -> Any:
+    def _extract_field(self, element, field_name: str, field_config: Union[str, Dict[str, Any]]) -> Any:
         if not element:
             return None
 
+        selector = field_config if isinstance(field_config, str) else field_config.get("selector")
         target_element = element.select_one(selector) if selector else element
         if not target_element:
             return None
 
-        # Robust attribute extraction
-        if selector and "[" in selector and selector.endswith("]"):
+        # Determine attribute to extract
+        attr = None
+        if isinstance(field_config, dict):
+            attr = field_config.get("attribute")
+        elif selector and "[" in selector and selector.endswith("]"):
             attr = selector.split("[")[-1][:-1]
+
+        if not attr and target_element.name == "a" and (field_name == "link" or field_name == "url"):
+            attr = "href"
+
+        # Extract value
+        if attr:
             val = target_element.get(attr)
             if attr in ["href", "src", "action"] and val:
-                return urljoin(self.url, val)
-            return val
+                val = urljoin(self.url, val)
+        else:
+            val = target_element.get_text(strip=True)
 
-        # Default behavior for links
-        if target_element.name == "a" and (field_name == "link" or field_name == "url"):
-            val = target_element.get("href")
-            return urljoin(self.url, val) if val else None
+        # Apply regex post-processing if defined
+        if isinstance(field_config, dict) and "regex" in field_config and val:
+            match = re.search(field_config["regex"], val)
+            if match:
+                val = match.group(1) if match.groups() else match.group(0)
 
-        return target_element.get_text(strip=True)
+        return val
 
     def parse(self, html: str) -> List[Dict[str, Any]]:
         soup = BeautifulSoup(html, 'html.parser')
@@ -73,13 +86,13 @@ class GenericCrawler:
             items = soup.select(self.items_selector)
             for item in items:
                 extracted_item = {}
-                for field_name, selector in self.fields.items():
-                    extracted_item[field_name] = self._extract_field(item, field_name, selector)
+                for field_name, field_config in self.fields.items():
+                    extracted_item[field_name] = self._extract_field(item, field_name, field_config)
                 results.append(extracted_item)
         else:
             extracted_item = {}
-            for field_name, selector in self.fields.items():
-                extracted_item[field_name] = self._extract_field(soup, field_name, selector)
+            for field_name, field_config in self.fields.items():
+                extracted_item[field_name] = self._extract_field(soup, field_name, field_config)
             results.append(extracted_item)
 
         return results

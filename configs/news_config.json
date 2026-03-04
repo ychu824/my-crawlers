@@ -1,8 +1,12 @@
 {
     "name": "Arxiv Machine Learning Papers",
     "url": "https://arxiv.org/list/cs.LG/recent",
-    "items_selector": ".list-title",
+    "items_selector": "dd",
     "fields": {
-        "title": "span:nth-child(2)"
+        "title": {
+            "selector": ".list-title",
+            "regex": "Title:\\s*(.+)"
+        },
+        "authors": ".list-authors"
     }
 }
