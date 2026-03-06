@@ -3,6 +3,15 @@ Crawlers for my daily life
 
 ## Setup
 
+### Prerequisites (Install Python 3)
+
+- **Ubuntu**:
+  ```bash
+  sudo apt update && sudo apt install -y python3 python3-pip python3-venv
+  ```
+- **Windows**:
+  Download and install from [python.org](https://www.python.org/downloads/). **Important**: during installation, check the box **"Add Python to PATH"**.
+
 1. create & activate a virtualenv:
    - **Linux/macOS**:
      ```bash
