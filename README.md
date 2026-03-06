@@ -3,10 +3,25 @@ Crawlers for my daily life
 
 ## Setup
 
-1. (Linux/macOS) create & activate a virtualenv:
-   ```bash
-   python3 -m venv venv && source venv/bin/activate
-   ```
+### Prerequisites (Install Python 3)
+
+- **Ubuntu**:
+  ```bash
+  sudo apt update && sudo apt install -y python3 python3-pip python3-venv
+  ```
+- **Windows**:
+  Download and install from [python.org](https://www.python.org/downloads/). **Important**: during installation, check the box **"Add Python to PATH"**.
+
+1. create & activate a virtualenv:
+   - **Linux/macOS**:
+     ```bash
+     python3 -m venv venv && source venv/bin/activate
+     ```
+   - **Windows**:
+     ```bash
+     python -m venv venv
+     venv\Scripts\activate
+     ```
 
 2. install Python requirements and Playwright browsers:
    ```bash
@@ -31,7 +46,7 @@ That’s it—the environment is ready for crawling.
 
 ## Usage
 
-Run any crawler by pointing at a JSON configuration and optional filters:
+Run any crawler by pointing at a JSON configuration and optional filters (Windows users use `venv\Scripts\activate` instead of `source`):
 ```bash
 source venv/bin/activate
 python main.py --config <config_file_path> [--output out.json] \
@@ -51,6 +66,8 @@ python main.py --config configs/price_config.json      # price sites
 - `--search-field` (optional): Field to search in (default: name)
 
 ### Examples
+
+*Note: Windows users use `venv\Scripts\activate` instead of `source venv/bin/activate`.*
 
 Run gun.deals crawler and save output:
 ```bash
@@ -74,6 +91,8 @@ python main.py --config configs/gundeals_config.json --search "Beretta M9 9mm ha
 ---
 
 ### EVO skis
+
+*Note: Windows users use `venv\Scripts\activate` instead of `source venv/bin/activate`.*
 
 A new configuration is provided at `configs/evo_skis_config.json` for scraping
 ski deals from the EVO website.  Because EVO’s Cloudflare protection is strict,
@@ -107,11 +126,16 @@ small HTTP API so local agents can query logs or status.
 
 Install Node dependencies and start the service:
 
-```bash
-# on Ubuntu use the system Python; on macOS you can point to the venv
-export PYTHON=/usr/bin/python3   # optional override for deploy
-./start-tracker.sh
-```
+- **Linux/macOS**:
+  ```bash
+  # on Ubuntu use the system Python; on macOS you can point to the venv
+  export PYTHON=/usr/bin/python3   # optional override for deploy
+  ./start-tracker.sh
+  ```
+- **Windows**:
+  ```cmd
+  start-tracker.bat
+  ```
 
 You may run this from `cron` or your preferred init system.  The script will
 install npm packages if they are missing.
@@ -178,9 +202,9 @@ information.
 0 * * * * cd /path/to/my-crawlers && ./start-tracker.sh
 ```
 
-```json
+---
 
-Search for Beretta M9 and save results:
+Search for Beretta M9 and save results (Windows users use `venv\Scripts\activate`):
 ```bash
 source venv/bin/activate
 python main.py --config configs/gundeals_config.json --search "Beretta M9" --output beretta_m9_deals.json
