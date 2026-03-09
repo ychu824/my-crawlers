@@ -8,7 +8,11 @@
         "snowboard": "https://www.evo.com/shop/snowboard",
         "snowboards": "https://www.evo.com/shop/snowboard",
         "blizzard": "https://www.evo.com/shop/ski/skis/blizzard",
-        "fischer": "https://www.evo.com/shop/ski/skis/fischer"
+        "atomic": "https://www.evo.com/shop/ski/skis/atomic",
+        "fischer": "https://www.evo.com/shop/ski/skis/fischer",
+        "nordica": "https://www.evo.com/shop/ski/skis/nordica",
+        "black crows": "https://www.evo.com/shop/ski/skis/black-crows",
+        "salomon": "https://www.evo.com/shop/ski/skis/salomon"
     },
     "page_param": "page",
     "max_pages": 10,
