@@ -23,12 +23,6 @@ Crawlers for my daily life
 
 That’s it—the environment is ready for crawling.
 
-### Troubleshooting
-
-- Permission errors: run from project root with correct permissions
-- Playwright issues: ensure the above system packages are installed
-- Low-memory machines: run one crawler at a time or increase swap
-
 ## Usage
 
 Run any crawler by pointing at a JSON configuration and optional filters:
@@ -41,7 +35,6 @@ python main.py --config <config_file_path> [--output out.json] \
 Shortcuts (same command, pre‑selected configs):
 ```bash
 python main.py --config configs/gundeals_config.json   # gun.deals
-python main.py --config configs/news_config.json       # news
 python main.py --config configs/price_config.json      # price sites
 ```
 **Arguments:**
@@ -158,6 +151,27 @@ install npm packages if they are missing.
 Additional keys (thresholds, email addresses, etc.) may be added later.
 
 State is stored in `tracker/state.json` and updated automatically.
+Full per-run crawl snapshots are stored in `output/tracker/` as timestamped JSON files.
+
+To avoid committing tracker changes, put your VM-specific edits in `tracker/config.local.json`.
+The service loads config in this order:
+
+- `TRACKER_CONFIG` environment variable, if set
+- `tracker/config.local.json`, if present
+- `tracker/config.json` as the committed default
+
+Example VM workflow:
+
+```bash
+cd /home/azureuser/my-crawlers
+cp tracker/config.json tracker/config.local.json
+vim tracker/config.local.json
+sudo systemctl restart my-crawlers.service
+curl -s http://localhost:3001/status
+```
+
+The `/status` response includes `configPath`, so you can verify which config file
+the tracker actually loaded.
 
 ### Notifications
 
@@ -190,6 +204,13 @@ a timestamp
 
 Your local agent (or an ad-hoc `curl`) can poll these endpoints for useful
 information.
+
+To inspect the latest snapshots:
+
+```bash
+ls -lt output/tracker | head
+cat output/tracker/<latest-file>.json
+```
 
 ### Cron example
 

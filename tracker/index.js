@@ -6,17 +6,22 @@ const express = require('express');
 const logger = require('./logger');
 const { sendEmail } = require('./email');
 
-const configPath = path.join(__dirname, 'config.json');
+const defaultConfigPath = path.join(__dirname, 'config.json');
+const localConfigPath = path.join(__dirname, 'config.local.json');
 const statePath = path.join(__dirname, 'state.json');
+const resultsDir = process.env.TRACKER_RESULTS_DIR || path.join(__dirname, '..', 'output', 'tracker');
 
 let config = [];
 let state = {};
+let activeConfigPath = process.env.TRACKER_CONFIG || (fs.existsSync(localConfigPath) ? localConfigPath : defaultConfigPath);
 
 function loadFiles() {
   try {
-    config = JSON.parse(fs.readFileSync(configPath));
+    activeConfigPath = process.env.TRACKER_CONFIG || (fs.existsSync(localConfigPath) ? localConfigPath : defaultConfigPath);
+    config = JSON.parse(fs.readFileSync(activeConfigPath));
+    logger.info('Loaded tracker config', { configPath: activeConfigPath, itemCount: Array.isArray(config) ? config.length : 0 });
   } catch (e) {
-    logger.error('Unable to read config.json', { error: e.message });
+    logger.error('Unable to read tracker config', { configPath: activeConfigPath, error: e.message });
     process.exit(1);
   }
   try {
@@ -28,6 +33,37 @@ function loadFiles() {
 
 function saveState() {
   fs.writeFileSync(statePath, JSON.stringify(state, null, 2));
+}
+
+function sanitizeFilePart(input) {
+  return String(input || 'unknown')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80) || 'unknown';
+}
+
+function saveRunSnapshot(item, results) {
+  try {
+    fs.mkdirSync(resultsDir, { recursive: true });
+    const ts = new Date().toISOString().replace(/[:]/g, '-');
+    const itemSlug = sanitizeFilePart(item.name);
+    const fileName = `${ts}-${itemSlug}.json`;
+    const filePath = path.join(resultsDir, fileName);
+    const payload = {
+      timestamp: new Date().toISOString(),
+      item: item.name,
+      crawlerConfig: item.crawlerConfig,
+      search: item.search || null,
+      brand: item.brand || null,
+      count: Array.isArray(results) ? results.length : 0,
+      results: Array.isArray(results) ? results : [],
+    };
+    fs.writeFileSync(filePath, JSON.stringify(payload, null, 2));
+    logger.info('Saved crawl snapshot', { item: item.name, filePath, count: payload.count });
+  } catch (e) {
+    logger.error('Failed to save crawl snapshot', { item: item.name, error: e.message });
+  }
 }
 
 function runCrawler(item) {
@@ -96,6 +132,7 @@ async function checkAll() {
   for (const item of config) {
     try {
       const results = await runCrawler(item);
+      saveRunSnapshot(item, results);
       processItem(item, results);
     } catch (e) {
       logger.error('Error processing item', { item: item.name, error: e.message });
@@ -111,7 +148,7 @@ cron.schedule('0 * * * *', checkAll);
 // minimal HTTP server for logs/status
 const app = express();
 app.get('/status', (req, res) => {
-  res.json({ config, state, lastRun: state._lastRun });
+  res.json({ config, configPath: activeConfigPath, state, lastRun: state._lastRun });
 });
 app.get('/logs', (req, res) => {
   const since = req.query.since;

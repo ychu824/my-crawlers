@@ -20,3 +20,4 @@ output/
 tracker/node_modules/
 tracker/logs/
 tracker/state.json
+tracker/config.local.json
