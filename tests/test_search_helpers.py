@@ -3,7 +3,7 @@ import argparse
 from unittest.mock import patch, MagicMock
 
 import main
-from main import tokenize_search
+from main import tokenize_search, compute_deal_score
 
 
 class TestSearchHelpers(unittest.TestCase):
@@ -53,6 +53,17 @@ class TestSearchHelpers(unittest.TestCase):
         self.assertEqual(crawler.run.call_count, 2)
         # fallback call should use brand category instead of generic ski category
         self.assertEqual(crawler.run.call_args_list[1].kwargs, {"query": None, "category": "blizzard"})
+
+    def test_compute_deal_score_uses_sale_and_original_price_from_flattened_evo_text(self):
+        item = {
+            "name": "Salomon QST 94 Skis 20264.39 Reviews$559.96Sale-$699.95",
+            "brand": "Salomon",
+            "price": "$559.96",
+            "link": "https://www.evo.com/skis/salomon-qst-94",
+        }
+        score = compute_deal_score(item)
+        self.assertGreater(score, 100.0)
+        self.assertAlmostEqual(score, 122.99200000000002)
 
 
 if __name__ == "__main__":

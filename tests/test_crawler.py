@@ -143,5 +143,34 @@ class TestGenericCrawler(unittest.TestCase):
         self.assertEqual(mock_fetch.call_count, 1)
         self.assertEqual(mock_fetch.call_args.args[0], "http://example.com/search?q=abc")
 
+    def test_run_dedupes_results_by_link_when_names_differ(self):
+        config = {
+            "url": "http://example.com/base",
+            "page_param": "page",
+            "max_pages": 2
+        }
+        crawler = GenericCrawler(config)
+        first_page = [
+            {
+                "name": "Salomon QST 106 Skis 2026$639.96Sale-$799.95",
+                "price": "$639.96",
+                "link": "https://www.evo.com/skis/salomon-qst-106",
+            }
+        ]
+        second_page = [
+            {
+                "name": "Salomon QST 106 Skis 20264.77 Reviews$639.96Sale-$799.95",
+                "price": "$639.96",
+                "link": "https://www.evo.com/skis/salomon-qst-106",
+            }
+        ]
+
+        with patch.object(crawler, "_fetch_url", side_effect=["<page1></page1>", "<page2></page2>"]):
+            with patch.object(crawler, "parse", side_effect=[first_page, second_page]):
+                results = crawler.run()
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["link"], "https://www.evo.com/skis/salomon-qst-106")
+
 if __name__ == '__main__':
     unittest.main()

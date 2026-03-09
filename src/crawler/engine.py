@@ -145,7 +145,11 @@ class GenericCrawler:
             def add_items(items: List[Dict[str, Any]]) -> int:
                 added = 0
                 for item in items:
-                    key = (item.get("link"), item.get("name"), item.get("price"))
+                    link = item.get("link")
+                    if link:
+                        key = ("link", link)
+                    else:
+                        key = ("fields", item.get("name"), item.get("price"))
                     if key in seen:
                         continue
                     seen.add(key)

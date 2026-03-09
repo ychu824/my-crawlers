@@ -69,17 +69,23 @@ def compute_deal_score(item: dict) -> float:
     - high absolute price * discount ratio
     - recent model year (parsed from name)
     """
-    price_text = item.get("price", "") or ""
-    # find all dollar amounts
-    amounts = re.findall(r"\$([0-9,]+\.?\d*)", price_text)
+    price_sources = [
+        str(item.get("price", "") or ""),
+        str(item.get("name", "") or ""),
+    ]
+    price_text = " ".join(part for part in price_sources if part)
+    # Some EVO listings flatten sale/original prices into a single text blob.
+    # Consider every dollar amount we can find, then treat the lowest as current
+    # and the highest as original.
+    amounts = [float(v.replace(',', '')) for v in re.findall(r"\$([0-9,]+\.?\d*)", price_text)]
     current = 0.0
     original = 0.0
     if amounts:
-        current = float(amounts[-1].replace(',', ''))
+        current = min(amounts)
         if len(amounts) >= 2:
-            original = float(amounts[0].replace(',', ''))
+            original = max(amounts)
     discount = 0.0
-    if original > 0:
+    if original > current > 0:
         discount = (original - current) / original
     score = current * discount
     # year bonus
