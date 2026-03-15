@@ -1,0 +1,63 @@
+{
+    "name": "King County CPL Appointments",
+    "url": "https://kiosk.na1.qless.com/kiosk/app/home/100100000129",
+    "use_playwright": true,
+    "wait_for_selector": "#consumerfield_firstName",
+    "actions": [
+        {
+            "type": "fill",
+            "selector": "#consumerfield_firstName",
+            "value": "${CPL_FIRST_NAME}"
+        },
+        {
+            "type": "fill",
+            "selector": "#consumerfield_lastName",
+            "value": "${CPL_LAST_NAME}"
+        },
+        {
+            "type": "fill",
+            "selector": "input[type='tel']",
+            "value": "${CPL_PHONE}"
+        },
+        {
+            "type": "click",
+            "selector": "#qBtnNext"
+        },
+        {
+            "type": "wait",
+            "selector": ".queue-item"
+        },
+        {
+            "type": "delay",
+            "ms": 2000
+        },
+        {
+            "type": "js_click",
+            "selector": "button:has-text('CPL/AFL')"
+        },
+        {
+            "type": "wait",
+            "selector": ".btn-item"
+        },
+        {
+            "type": "delay",
+            "ms": 2000
+        },
+        {
+            "type": "js_click",
+            "selector": "button:has-text('Concealed Pistol License')"
+        },
+        {
+            "type": "wait",
+            "selector": "#page_appointmentTime"
+        }
+    ],
+    "fields": {
+        "status": {
+            "selector": "#page_appointmentTime"
+        },
+        "page_title": {
+            "selector": "title"
+        }
+    }
+}

@@ -3,7 +3,31 @@ import argparse
 import sys
 import re
 import os
+from pathlib import Path
 from src.crawler.engine import GenericCrawler
+
+
+def load_dotenv(path: str = ".env"):
+    """Load variables from a .env file into os.environ (without overwriting)."""
+    env_path = Path(path)
+    if not env_path.is_file():
+        return
+    with open(env_path) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            # strip optional 'export ' prefix
+            if line.startswith("export "):
+                line = line[len("export "):]
+            key, _, value = line.partition("=")
+            key = key.strip()
+            value = value.strip().strip("\"'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+
+
+load_dotenv()
 
 def normalize_token(token: str) -> str:
     token = token.strip().lower()

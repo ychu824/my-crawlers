@@ -6,9 +6,7 @@
     "brand": "Fischer"
   },
   {
-    "name": "Test Gun",
-    "crawlerConfig": "configs/gundeals_config.json",
-    "search": "Beretta",
-    "brand": "Beretta"
+    "name": "King County CPL Appointments",
+    "crawlerConfig": "configs/kingcounty_cpl_config.json"
   }
 ]

@@ -2,21 +2,36 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import re
+import os
+import sys
 from typing import List, Dict, Any, Union
 from urllib.parse import urljoin
 from playwright.sync_api import sync_playwright
 
 class GenericCrawler:
     def __init__(self, config: Dict[str, Any]):
-        self.config = config
-        self.url = config.get("url")
-        self.items_selector = config.get("items_selector")
-        self.fields = config.get("fields", {})
-        self.use_playwright = config.get("use_playwright", False)
-        self.wait_for_selector = config.get("wait_for_selector")
-        self.headers = config.get("headers", {
+        # Process environment variable substitution in config
+        self.config = self._process_env_vars(config)
+        self.url = self.config.get("url")
+        self.items_selector = self.config.get("items_selector")
+        self.fields = self.config.get("fields", {})
+        self.use_playwright = self.config.get("use_playwright", False)
+        self.wait_for_selector = self.config.get("wait_for_selector")
+        self.headers = self.config.get("headers", {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         })
+
+    def _process_env_vars(self, config: Dict[str, Any]) -> Dict[str, Any]:
+        """Recursively process environment variable substitution in config values."""
+        if isinstance(config, dict):
+            return {key: self._process_env_vars(value) for key, value in config.items()}
+        elif isinstance(config, list):
+            return [self._process_env_vars(item) for item in config]
+        elif isinstance(config, str):
+            # Replace ${VAR_NAME} patterns with environment variables
+            return re.sub(r'\$\{([^}]+)\}', lambda m: os.getenv(m.group(1), m.group(0)), config)
+        else:
+            return config
 
     def fetch(self) -> str:
         if self.use_playwright:
@@ -32,18 +47,88 @@ class GenericCrawler:
     def _fetch_with_playwright(self) -> str:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
-            context = browser.new_context(user_agent=self.headers["User-Agent"])
+            context = browser.new_context(
+                user_agent=self.headers["User-Agent"],
+                viewport={'width': 1280, 'height': 1024}
+            )
             page = context.new_page()
             page.goto(self.url)
+            
+            # Wait for initial load and try to enable JavaScript
+            try:
+                page.wait_for_load_state("domcontentloaded", timeout=10000)
+                # Try to execute some JavaScript to ensure it's working
+                page.evaluate("() => { return document.readyState; }")
+            except Exception as e:
+                print(f"Initial page load error: {e}")
+            
+            # Execute actions if defined
+            actions = self.config.get("actions", [])
+            for i, action in enumerate(actions):
+                action_type = action.get("type")
+                print(f"Executing action {i+1}: {action_type}", file=sys.stderr)
+                if action_type == "click":
+                    selector = action.get("selector")
+                    force = action.get("force", False)
+                    if selector:
+                        try:
+                            page.click(selector, timeout=10000, force=force)
+                            print(f"Clicked: {selector}", file=sys.stderr)
+                        except Exception as e:
+                            print(f"Click failed for {selector}: {e}", file=sys.stderr)
+                elif action_type == "js_click":
+                    selector = action.get("selector")
+                    if selector:
+                        try:
+                            loc = page.locator(selector).first
+                            loc.wait_for(timeout=10000)
+                            loc.evaluate("el => el.click()")
+                            print(f"JS-clicked: {selector}", file=sys.stderr)
+                        except Exception as e:
+                            print(f"JS-click failed for {selector}: {e}", file=sys.stderr)
+                elif action_type == "fill":
+                    selector = action.get("selector")
+                    value = action.get("value", "")
+                    if selector and value:
+                        try:
+                            page.fill(selector, value, timeout=10000)
+                            print(f"Filled {selector} with value", file=sys.stderr)
+                        except Exception as e:
+                            print(f"Fill failed for {selector}: {e}", file=sys.stderr)
+                elif action_type == "wait":
+                    selector = action.get("selector")
+                    if selector:
+                        try:
+                            page.wait_for_selector(selector, timeout=10000)
+                            print(f"Waited for: {selector}", file=sys.stderr)
+                        except Exception as e:
+                            print(f"Wait failed for {selector}: {e}", file=sys.stderr)
+                elif action_type == "delay":
+                    import time
+                    delay_ms = action.get("ms", 2000)
+                    time.sleep(delay_ms / 1000)
+                    print(f"Delayed {delay_ms}ms", file=sys.stderr)
+                elif action_type == "wait_for_text":
+                    text = action.get("text")
+                    if text:
+                        try:
+                            page.wait_for_selector(f"text={text}", timeout=15000)
+                            print(f"Waited for text: {text}", file=sys.stderr)
+                        except Exception as e:
+                            print(f"Wait for text failed: {text}: {e}", file=sys.stderr)
+            
             try:
                 if self.wait_for_selector:
-                    page.wait_for_selector(self.wait_for_selector)
+                    page.wait_for_selector(self.wait_for_selector, timeout=10000)
+                    print(f"Final wait completed for: {self.wait_for_selector}", file=sys.stderr)
                 else:
-                    page.wait_for_load_state("networkidle")
-            except Exception:  # timeout or other wait errors
-                # ignore and proceed; content may still be returned (e.g., Cloudflare block page)
-                pass
+                    page.wait_for_load_state("networkidle", timeout=10000)
+                    print("Waited for network idle", file=sys.stderr)
+            except Exception as e:  # timeout or other wait errors
+                print(f"Final wait error: {e}", file=sys.stderr)
+            
             content = page.content()
+            print(f"Page content length: {len(content)}", file=sys.stderr)
             browser.close()
             return content
 
