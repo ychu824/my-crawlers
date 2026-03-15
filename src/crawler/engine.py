@@ -165,6 +165,17 @@ class GenericCrawler:
             if match:
                 val = match.group(1) if match.groups() else match.group(0)
 
+        # Pattern matching: map regex patterns to clean output values.
+        # Returns the key of the first matching pattern, or "default" value.
+        #   "patterns": { "no_appointments": "Sorry|fully booked", "available": "Select a date" }
+        if isinstance(field_config, dict) and "patterns" in field_config and val:
+            patterns = field_config["patterns"]
+            default = field_config.get("default")
+            for label, pattern in patterns.items():
+                if re.search(pattern, val, re.IGNORECASE):
+                    return label
+            return default
+
         return val
 
     def parse(self, html: str) -> List[Dict[str, Any]]:

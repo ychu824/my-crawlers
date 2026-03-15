@@ -53,8 +53,17 @@
         }
     ],
     "fields": {
-        "status": {
-            "selector": "#page_appointmentTime"
+        "appointments_available": {
+            "selector": "#page_appointmentTime",
+            "patterns": {
+                "no": "Sorry, no appointments|no appointments available|fully booked|No slots available|No times available",
+                "yes": "Select a date|Choose a time|Available appointments|Next Available|calendar"
+            },
+            "default": "unknown"
+        },
+        "message": {
+            "selector": "#page_appointmentTime",
+            "regex": "(Sorry[^.]+\\.[^.]+\\.|Select a date[^.]*\\.)"
         },
         "page_title": {
             "selector": "title"
