@@ -36,6 +36,7 @@ Shortcuts (same command, pre‑selected configs):
 ```bash
 python main.py --config configs/gundeals_config.json   # gun.deals
 python main.py --config configs/price_config.json      # price sites
+python main.py --config configs/kingcounty_cpl_config.json  # King County CPL appointments
 ```
 **Arguments:**
 - `--config` (required): Path to the JSON configuration file
@@ -110,6 +111,23 @@ Results will include a `deal_score` field and are sorted when `--score` is used.
 
 ---
 
+### King County CPL Appointments
+
+A configuration for monitoring Concealed Pistol License (CPL) appointment availability at King County Sheriff's Office. Uses Playwright to navigate the QLess kiosk system and check for available appointment slots.
+
+```bash
+source venv/bin/activate
+python main.py --config configs/kingcounty_cpl_config.json --output output/cpl_latest.json
+```
+
+**Detection Logic:**
+- **Available**: Page shows appointment selection options (dates, times)
+- **Unavailable**: Page shows "Sorry, no appointments are available"
+
+The tracker service can monitor this config and send email notifications when appointments become available.
+
+---
+
 ## Periodic Tracking Service (Node.js)
 
 A lightweight tracker resides in the `tracker/` directory. It schedules crawls,
@@ -140,6 +158,10 @@ install npm packages if they are missing.
     "crawlerConfig": "configs/evo_skis_config.json",
     "search": "Fischer RC4 2025",
     "brand": "Fischer"
+  },
+  {
+    "name": "King County CPL Appointments",
+    "crawlerConfig": "configs/kingcounty_cpl_config.json"
   }
 ]
 ```
@@ -227,6 +249,8 @@ python main.py --config configs/gundeals_config.json --search "Beretta M9" --out
 ## Configuration
 
 Each crawler has a corresponding JSON configuration file in the `configs/` directory. Customize the URL and extraction rules in these files to suit your needs.
+
+The `temp/` directory contains development artifacts and debugging files that can be safely ignored or removed.
 
 ## Unit Tests
 
