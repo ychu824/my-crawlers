@@ -134,6 +134,19 @@ A lightweight tracker resides in the `tracker/` directory. It schedules crawls,
 remembers past prices, and notifies you of drops. The service also exposes a
 small HTTP API so local agents can query logs or status.
 
+### Module Structure
+
+| File | Responsibility |
+|------|---------------|
+| `tracker/index.js` | Orchestrator — config loading, state, cron scheduling, startup |
+| `tracker/crawler.js` | Spawns the Python crawler subprocess |
+| `tracker/processor.js` | Price comparison and email alert logic |
+| `tracker/snapshot.js` | Writes timestamped JSON result files to `output/tracker/` |
+| `tracker/gc.js` | Garbage collection for logs and old snapshots |
+| `tracker/api.js` | Express HTTP server (`/status`, `/logs`) |
+| `tracker/logger.js` | Winston logger configuration |
+| `tracker/email.js` | Email sender via nodemailer |
+
 ### Setup
 
 Install Node dependencies and start the service:
@@ -213,6 +226,19 @@ When a price drop is detected, an email is sent to `NOTIFY_EMAIL`.
 By default each crawler run has a 2‑minute timeout, so a blocked site won’t hang the
 entire schedule.  Timeout errors appear in the log and the tracker moves to the
 next item automatically.
+
+### Log Garbage Collection
+
+A built-in GC runs daily at 3:00 AM to prevent unbounded log growth:
+
+- **Log trimming**: removes entries older than the retention period from `tracker/logs/tracker.log`
+- **Snapshot cleanup**: deletes snapshot files in `output/tracker/` older than the retention period
+
+The retention period defaults to **3 days** and can be configured via environment variable:
+
+```bash
+export LOG_RETENTION_DAYS=7   # keep 7 days of logs instead of the default 3
+```
 
 ### Logs & diagnostics
 
