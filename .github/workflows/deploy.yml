@@ -38,7 +38,7 @@ jobs:
         run: |
           set -euo pipefail
           VM_PORT="${VM_PORT:-22}"
-          DEPLOY_PATH="${DEPLOY_PATH:-/home/azureuser/my-crawlers}"
+          DEPLOY_PATH="${DEPLOY_PATH}"
           ssh -i ~/.ssh/vm_deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -p "$VM_PORT" "$VM_USERNAME@$VM_HOST" \
             "set -euo pipefail; cd ${DEPLOY_PATH}; bash deploy.sh"
 
