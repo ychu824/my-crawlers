@@ -8,5 +8,9 @@
   {
     "name": "King County CPL Appointments",
     "crawlerConfig": "configs/kingcounty_cpl_config.json"
+  },
+  {
+    "name": "King County AFL Appointments",
+    "crawlerConfig": "configs/kingcounty_afl_config.json"
   }
 ]

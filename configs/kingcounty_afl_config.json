@@ -1,0 +1,72 @@
+{
+    "name": "King County AFL Appointments",
+    "url": "https://kiosk.na1.qless.com/kiosk/app/home/100100000129",
+    "use_playwright": true,
+    "wait_for_selector": "#consumerfield_firstName",
+    "actions": [
+        {
+            "type": "fill",
+            "selector": "#consumerfield_firstName",
+            "value": "${CPL_FIRST_NAME}"
+        },
+        {
+            "type": "fill",
+            "selector": "#consumerfield_lastName",
+            "value": "${CPL_LAST_NAME}"
+        },
+        {
+            "type": "fill",
+            "selector": "input[type='tel']",
+            "value": "${CPL_PHONE}"
+        },
+        {
+            "type": "click",
+            "selector": "#qBtnNext"
+        },
+        {
+            "type": "wait",
+            "selector": ".queue-item"
+        },
+        {
+            "type": "delay",
+            "ms": 2000
+        },
+        {
+            "type": "js_click",
+            "selector": "button:has-text('CPL/AFL')"
+        },
+        {
+            "type": "wait",
+            "selector": ".btn-item"
+        },
+        {
+            "type": "delay",
+            "ms": 2000
+        },
+        {
+            "type": "js_click",
+            "selector": "button:has-text('Alien Firearm License')"
+        },
+        {
+            "type": "wait",
+            "selector": "#page_appointmentTime"
+        }
+    ],
+    "fields": {
+        "appointments_available": {
+            "selector": "#page_appointmentTime",
+            "patterns": {
+                "no": "Sorry, no appointments|no appointments available|fully booked|No slots available|No times available",
+                "yes": "Select a date|Choose a time|Available appointments|Next Available|calendar"
+            },
+            "default": "unknown"
+        },
+        "message": {
+            "selector": "#page_appointmentTime",
+            "regex": "(Sorry[^.]+\\.[^.]+\\.|Select a date[^.]*\\.)"
+        },
+        "page_title": {
+            "selector": "title"
+        }
+    }
+}
