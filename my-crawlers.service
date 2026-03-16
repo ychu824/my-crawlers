@@ -4,13 +4,13 @@ After=network.target
 
 [Service]
 Type=simple
-User={{USER}}
-WorkingDirectory={{PROJECT_DIR}}
+User=azureuser
+WorkingDirectory=/home/azureuser/my-crawlers
 ExecStart=/usr/bin/node tracker/index.js
 Restart=always
 Environment=NODE_ENV=production
 # SMTP and other secrets should be provided via an EnvironmentFile or GitHub Secrets
-# EnvironmentFile={{PROJECT_DIR}}/.env
+# EnvironmentFile=/home/azureuser/my-crawlers/.env
 
 [Install]
 WantedBy=multi-user.target

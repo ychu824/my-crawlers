@@ -15,7 +15,6 @@ jobs:
       VM_HOST: ${{ vars.VM_HOST }}
       VM_USERNAME: ${{ vars.VM_USERNAME }}
       VM_PORT: ${{ vars.VM_PORT }}
-      VM_PROJECT_DIR: ${{ vars.VM_PROJECT_DIR }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -38,9 +37,8 @@ jobs:
         run: |
           set -euo pipefail
           VM_PORT="${VM_PORT:-22}"
-          VM_PROJECT_DIR="${VM_PROJECT_DIR:-/home/azureuser/my-crawlers}"
           ssh -i ~/.ssh/vm_deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -p "$VM_PORT" "$VM_USERNAME@$VM_HOST" \
-            "set -euo pipefail; cd $VM_PROJECT_DIR; bash deploy.sh"
+            'set -euo pipefail; cd /home/azureuser/my-crawlers; bash deploy.sh'
 
       - name: Cleanup SSH key
         if: always()
