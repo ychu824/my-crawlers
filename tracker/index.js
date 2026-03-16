@@ -1,7 +1,9 @@
-require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env') });
+const envPath = require('path').resolve(__dirname, '..', '.env');
+require('dotenv').config({ path: envPath });
 const fs = require('fs');
 const path = require('path');
 const cron = require('node-cron');
+const dotenv = require('dotenv');
 const logger = require('./logger');
 const { runCrawler } = require('./crawler');
 const { processItem } = require('./processor');
@@ -63,8 +65,35 @@ cron.schedule(crawlCron, checkAll);
 const gcCron = process.env.TRACKER_GC_CRON || '0 3 * * *';
 cron.schedule(gcCron, () => gcLogs(resultsDir));
 
+// ── .env hot-reload ──────────────────────────────────────────────
+function reloadEnv() {
+  try {
+    const parsed = dotenv.parse(fs.readFileSync(envPath));
+    // update process.env with new values (existing shell vars still win)
+    for (const [key, value] of Object.entries(parsed)) {
+      process.env[key] = value;
+    }
+    logger.info('Reloaded .env', { path: envPath, keys: Object.keys(parsed) });
+  } catch (e) {
+    logger.error('Failed to reload .env', { error: e.message });
+  }
+}
+
+// watch .env for changes and auto-reload
+if (fs.existsSync(envPath)) {
+  fs.watch(envPath, (eventType) => {
+    if (eventType === 'change') {
+      logger.info('.env file changed, reloading environment variables');
+      reloadEnv();
+    }
+  });
+}
+
 // HTTP API
-const app = createApp(() => ({ config, configPath: activeConfigPath, state, lastRun: state._lastRun }));
+const app = createApp(
+  () => ({ config, configPath: activeConfigPath, state, lastRun: state._lastRun }),
+  reloadEnv
+);
 startServer(app);
 
 // run immediately on startup

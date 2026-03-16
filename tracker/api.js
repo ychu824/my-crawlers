@@ -3,11 +3,20 @@ const path = require('path');
 const express = require('express');
 const logger = require('./logger');
 
-function createApp(getStatus) {
+function createApp(getStatus, reloadEnv) {
   const app = express();
 
   app.get('/status', (req, res) => {
     res.json(getStatus());
+  });
+
+  app.post('/reload-env', (req, res) => {
+    if (reloadEnv) {
+      reloadEnv();
+      res.json({ ok: true, message: 'Environment variables reloaded from .env' });
+    } else {
+      res.status(501).json({ ok: false, message: 'Hot-reload not available' });
+    }
   });
 
   app.get('/logs', (req, res) => {

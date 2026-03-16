@@ -148,6 +148,18 @@ export PYTHON=/usr/bin/python3   # optional override for deploy
 The service auto-loads `.env` from the project root via `dotenv`. Environment
 variables set in the shell still take precedence over `.env` values.
 
+**Hot-reload:** The service watches `.env` for changes and automatically reloads
+environment variables without a restart. Simply edit `.env` and save — the new
+values take effect on the next scheduled crawl. You can also trigger a manual
+reload via the API:
+
+```bash
+curl -X POST http://localhost:3001/reload-env
+```
+
+> **Note:** Cron schedule changes (`TRACKER_CRON`, `TRACKER_GC_CRON`) require a
+> full restart since cron jobs are registered once at startup.
+
 You may run this from `cron` or your preferred init system.  The script will
 install npm packages if they are missing.
 
@@ -283,6 +295,7 @@ recent entries use the HTTP API:
 - `GET http://localhost:3001/logs` – all log lines
 - `GET http://localhost:3001/logs?since=2026-03-04T10:00:00Z` – only entries since
 a timestamp
+- `POST http://localhost:3001/reload-env` – hot-reload `.env` without restarting
 
 Your local agent (or an ad-hoc `curl`) can poll these endpoints for useful
 information.
