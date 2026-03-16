@@ -348,6 +348,7 @@ Use a dedicated CI deploy key without interactive passphrase prompts.
 - `VM_HOST`: Azure VM public IP or hostname
 - `VM_USERNAME`: SSH username (for your current setup: `azureuser`)
 - `VM_PORT` (optional): SSH port (`22` if omitted)
+- `DEPLOY_PATH` (optional): Absolute path to the repo on the VM (default: `/home/azureuser/my-crawlers`)
 
 SSH command for manual verification:
 
