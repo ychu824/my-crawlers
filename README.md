@@ -201,7 +201,7 @@ The service loads config in this order:
 Example VM workflow:
 
 ```bash
-cd /home/azureuser/my-crawlers
+cd /home/azureuser/my-crawlers # Or your configured VM_PROJECT_DIR
 cp tracker/config.json tracker/config.local.json
 vim tracker/config.local.json
 sudo systemctl restart my-crawlers.service
@@ -325,7 +325,7 @@ This repository includes a GitHub Action to automate deployments to an Azure Vir
 #### Initial VM Setup
 
 1. SSH into your VM.
-2. Clone the repository into `/home/azureuser/my-crawlers`:
+2. Clone the repository into your desired directory (e.g., `/home/azureuser/my-crawlers`):
    ```bash
    cd /home/azureuser
    git clone https://github.com/your-username/my-crawlers.git
@@ -348,6 +348,7 @@ Use a dedicated CI deploy key without interactive passphrase prompts.
 - `VM_HOST`: Azure VM public IP or hostname
 - `VM_USERNAME`: SSH username (for your current setup: `azureuser`)
 - `VM_PORT` (optional): SSH port (`22` if omitted)
+- `VM_PROJECT_DIR` (optional): Full path on the VM where the repo is cloned (defaults to `/home/azureuser/my-crawlers` if omitted)
 
 SSH command for manual verification:
 
