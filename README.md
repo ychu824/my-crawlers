@@ -5,20 +5,14 @@ Crawlers for my daily life, (evo, gun.deals, King County CPL appointment impleme
 
 1. (Linux/macOS) create & activate a virtualenv:
    ```bash
+   sudo apt-get install -y python3.12-venv
    python3 -m venv venv && source venv/bin/activate
    ```
 
 2. install Python requirements and Playwright browsers:
    ```bash
    pip install -r requirements.txt
-   playwright install
-   ```
-
-3. *Ubuntu 22 LTS only*: install system packages first:
-   ```bash
-   sudo apt update && sudo apt install -y python3 python3-pip python3-venv \
-       libgconf-2-4 libnss3 libxss1 libappindicator1 libindicator7 libgbm1 \
-       fonts-liberation xdg-utils
+   playwright install --with-deps chromium
    ```
 
 That’s it—the environment is ready for crawling.
