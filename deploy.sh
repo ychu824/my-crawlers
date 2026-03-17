@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-PROJECT_DIR="/home/azureuser/my-crawlers"
+PROJECT_DIR="$(pwd)"
 
 if [ ! -d "$PROJECT_DIR" ]; then
     echo "Directory $PROJECT_DIR does not exist. Please clone the repository first."

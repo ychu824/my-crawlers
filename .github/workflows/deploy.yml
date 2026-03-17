@@ -29,7 +29,7 @@ jobs:
           test -n "$VM_HOST"
           test -n "$VM_USERNAME"
           test -n "$DEPLOY_PATH"
-          echo "### Step [Prepare Key] PATH = $DEPLOY_PATH" >> $GITHUB_STEP_SUMMARY
+          echo "### Repo path = $DEPLOY_PATH" >> $GITHUB_STEP_SUMMARY
           VM_PORT="${VM_PORT:-22}"
           install -m 700 -d ~/.ssh
           printf '%s\n' "$VM_SSH_KEY" | tr -d '\r' > ~/.ssh/vm_deploy_key
@@ -40,10 +40,8 @@ jobs:
         run: |
           set -euo pipefail
           VM_PORT="${VM_PORT:-22}"
-          echo "### Step [Deploy2VM] PATH = $DEPLOY_PATH" >> $GITHUB_STEP_SUMMARY
-          DEPLOY_PATH="${DEPLOY_PATH}"
           ssh -i ~/.ssh/vm_deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -p "$VM_PORT" "$VM_USERNAME@$VM_HOST" \
-            "set -euo pipefail; cd ${DEPLOY_PATH}; bash deploy.sh"
+            "set -euo pipefail; echo 'Connected as:'; whoami; cd ${DEPLOY_PATH}; bash deploy.sh"
 
       - name: Cleanup SSH key
         if: always()
