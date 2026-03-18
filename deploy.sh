@@ -13,10 +13,6 @@ cd "$PROJECT_DIR"
 echo "Fetching latest code from main..."
 git pull origin main
 
-echo "Installing system dependencies..."
-sudo apt-get update
-sudo apt-get install -y python3.12-venv
-
 echo "Updating Python environment..."
 if [ ! -d "venv" ]; then
     python3 -m venv venv
