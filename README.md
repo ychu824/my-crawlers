@@ -63,7 +63,7 @@ python main.py --config configs/gundeals_config.json --search "Beretta M9 9mm ha
 
 ---
 
-#### 2.1.2EVO skis
+#### 2.1.2 EVO skis
 
 A new configuration is provided at `configs/evo_skis_config.json` for scraping
 ski deals from the EVO website.  Because EVO’s Cloudflare protection is strict,
