@@ -48,19 +48,51 @@ function processPriceItem(item, results, state) {
 }
 
 /**
+ * Parse raw kiosk text into a human-readable appointment summary.
+ * Input example:
+ *   "...Please select the day & time at which you would like to be seen.Monday June 15, 2026<>6:45 PM8:00 PM"
+ * Output:
+ *   "Monday June 15, 2026: 6:45 PM, 8:00 PM"
+ */
+function parseAppointmentMessage(raw) {
+  if (!raw) return 'Check the booking page for details.';
+
+  // extract everything after "Please select the day..."
+  const selectMatch = raw.match(/Please select the day[^.]*\.([\s\S]*)/i);
+  if (!selectMatch) return raw;
+
+  const body = selectMatch[1].trim();
+  // split on <> separator (QLess uses this between date and times)
+  const parts = body.split('<>').map(s => s.trim()).filter(Boolean);
+  if (parts.length < 2) return body || raw;
+
+  const date = parts[0];
+  // times are concatenated without separator — split on AM/PM boundaries
+  const timesRaw = parts.slice(1).join(' ');
+  const times = timesRaw.match(/\d+:\d+\s*(AM|PM)/gi) || [timesRaw];
+
+  return `${date}: ${times.join(', ')}`;
+}
+
+/**
  * Process appointment-tracking items — notify when slots open up.
  */
 function processAppointmentItem(item, results, state) {
   // results is typically a single-element array with field values
   const result = results[0] || {};
   const available = (result.appointments_available || '').toLowerCase();
-  const message = result.message || result.appointments_available || 'Check the booking page for details.';
+  const rawMessage = result.message || result.appointments_available || '';
+  const message = parseAppointmentMessage(rawMessage);
 
   const stateEntry = state[item.name] || {};
   const wasAvailable = stateEntry.lastStatus === 'yes';
 
-  if (available === 'yes') {
-    logger.info('Appointments available', { item: item.name, message });
+  // treat both "yes" and "unknown" as potentially available — better to
+  // over-notify than miss a real appointment window
+  const isAvailable = available === 'yes' || available === 'unknown';
+
+  if (isAvailable) {
+    logger.info('Appointments detected', { item: item.name, status: available, message });
     // only notify on transition (not-available → available) to avoid spam
     if (!wasAvailable && process.env.NOTIFY_EMAIL) {
       const vars = { item: item.name, message };
@@ -70,7 +102,7 @@ function processAppointmentItem(item, results, state) {
     logger.info('No appointments available', { item: item.name, status: available });
   }
 
-  state[item.name] = { lastStatus: available, lastMessage: message, lastChecked: new Date().toISOString() };
+  state[item.name] = { lastStatus: isAvailable ? 'yes' : available, lastMessage: message, lastChecked: new Date().toISOString() };
 }
 
 /**
