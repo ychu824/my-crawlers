@@ -287,9 +287,9 @@ recent entries use the HTTP API:
 
 - `GET http://localhost:3001/status` – current configuration and state
 - `GET http://localhost:3001/logs` – all log lines
-- `GET http://localhost:3001/logs?since=2026-03-04T10:00:00Z` – only entries since
-a timestamp
+- `GET http://localhost:3001/logs?since=2026-03-04T10:00:00Z` – only entries since a timestamp
 - `POST http://localhost:3001/reload-env` – hot-reload `.env` without restarting
+- `POST http://localhost:3001/gc` – manually trigger garbage collection (log trimming + snapshot cleanup)
 
 Your local agent (or an ad-hoc `curl`) can poll these endpoints for useful
 information.
@@ -310,6 +310,13 @@ Run all Python unit tests:
 ```bash
 source venv/bin/activate
 python -m unittest discover -s tests -p 'test_*.py' -v
+```
+
+Run all Node.js (tracker) unit tests:
+
+```bash
+cd tracker
+npm test
 ```
 
 ### Deployment to Azure VM
