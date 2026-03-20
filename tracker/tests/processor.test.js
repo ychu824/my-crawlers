@@ -77,6 +77,69 @@ describe('appointment email body content', () => {
   });
 });
 
+// ── state persistence ────────────────────────────────────────────────────────
+// Root cause of missing state.json entries: before the appointment_mode fix,
+// items were routed to processPriceItem which only writes state when a price
+// is found. Appointment results have no price field → state was never written
+// → wasAvailable always false → email sent on every check while available.
+
+describe('state persistence — appointment mode', () => {
+  test('always writes state when appointments are available', () => {
+    const state = {};
+    processItem(apptItem, [{ appointments_available: 'yes', message: 'Please select the day' }], state);
+    expect(state[apptItem.name]).toBeDefined();
+    expect(state[apptItem.name].lastStatus).toBe('yes');
+    expect(state[apptItem.name].lastChecked).toBeDefined();
+  });
+
+  test('always writes state when appointments are unavailable', () => {
+    const state = {};
+    processItem(apptItem, [{ appointments_available: 'no', message: 'Sorry, no appointments' }], state);
+    expect(state[apptItem.name]).toBeDefined();
+    expect(state[apptItem.name].lastStatus).toBe('no');
+  });
+
+  test('persisted state prevents duplicate email on subsequent available check', () => {
+    const state = {};
+    // First run: no state → sends email, writes state
+    processItem(apptItem, [{ appointments_available: 'yes', message: 'Please select the day' }], state);
+    expect(mockSendEmail).toHaveBeenCalledTimes(1);
+    mockSendEmail.mockClear();
+
+    // Second run: state has lastStatus='yes' → no email
+    processItem(apptItem, [{ appointments_available: 'yes', message: 'Please select the day' }], state);
+    expect(mockSendEmail).not.toHaveBeenCalled();
+  });
+
+  test('persisted unavailable state allows re-notification when slots open', () => {
+    const state = {};
+    // First run: unavailable → no email, writes state with lastStatus='no'
+    processItem(apptItem, [{ appointments_available: 'no', message: 'Sorry' }], state);
+    expect(mockSendEmail).not.toHaveBeenCalled();
+
+    // Second run: now available → transition detected → sends email
+    processItem(apptItem, [{ appointments_available: 'yes', message: 'Please select the day' }], state);
+    expect(mockSendEmail).toHaveBeenCalledTimes(1);
+  });
+
+  test('empty results still write state as unavailable (no crash)', () => {
+    const state = {};
+    processItem(apptItem, [], state);
+    expect(state[apptItem.name]).toBeDefined();
+    expect(mockSendEmail).not.toHaveBeenCalled();
+  });
+});
+
+describe('state persistence — price mode', () => {
+  test('does NOT write state when no price found in results', () => {
+    // This documents the known behavior: price items with no price field
+    // leave state untouched (appointment items always write state).
+    const state = {};
+    processItem(priceItem, [{ appointments_available: 'yes' }], state);
+    expect(state[priceItem.name]).toBeUndefined();
+  });
+});
+
 // ── price mode (appointment_mode absent) ─────────────────────────────────────
 
 const priceItem = { name: 'Example Ski' };
