@@ -92,7 +92,8 @@ if (fs.existsSync(envPath)) {
 // HTTP API
 const app = createApp(
   () => ({ config, configPath: activeConfigPath, state, lastRun: state._lastRun }),
-  reloadEnv
+  reloadEnv,
+  () => gcLogs(resultsDir)
 );
 startServer(app);
 
