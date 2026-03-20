@@ -7,10 +7,12 @@
   },
   {
     "name": "King County CPL Appointments",
-    "crawlerConfig": "configs/kingcounty_cpl_config.json"
+    "crawlerConfig": "configs/kingcounty_cpl_config.json",
+    "appointment_mode": true
   },
   {
     "name": "King County AFL Appointments",
-    "crawlerConfig": "configs/kingcounty_afl_config.json"
+    "crawlerConfig": "configs/kingcounty_afl_config.json",
+    "appointment_mode": true
   }
 ]

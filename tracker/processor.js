@@ -111,7 +111,7 @@ function processAppointmentItem(item, results, state) {
  * appointment trackers; everything else is a price tracker.
  */
 function processItem(item, results, state) {
-  const isAppointment = item.fields && item.fields.appointments_available;
+  const isAppointment = item.appointment_mode;
   if (isAppointment) {
     processAppointmentItem(item, results, state);
   } else {
