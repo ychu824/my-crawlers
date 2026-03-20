@@ -3,7 +3,7 @@ const path = require('path');
 const express = require('express');
 const logger = require('./logger');
 
-function createApp(getStatus, reloadEnv) {
+function createApp(getStatus, reloadEnv, runGc) {
   const app = express();
 
   app.get('/status', (req, res) => {
@@ -16,6 +16,15 @@ function createApp(getStatus, reloadEnv) {
       res.json({ ok: true, message: 'Environment variables reloaded from .env' });
     } else {
       res.status(501).json({ ok: false, message: 'Hot-reload not available' });
+    }
+  });
+
+  app.post('/gc', (req, res) => {
+    if (runGc) {
+      runGc();
+      res.json({ ok: true, message: 'GC triggered' });
+    } else {
+      res.status(501).json({ ok: false, message: 'GC not available' });
     }
   });
 
