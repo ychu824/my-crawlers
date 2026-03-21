@@ -47,17 +47,18 @@ jobs:
           ];
 
           for (const s of r.testResults) {
-            const name = s.testFilePath.replace(/.*\/tests\//, '');
-            const total = s.testResults.length;
-            const passed = s.testResults.filter(t => t.status === 'passed').length;
-            const failed = s.testResults.filter(t => t.status === 'failed').length;
+            const name = s.name.replace(/.*\/tests\//, '');
+            const assertions = s.assertionResults || [];
+            const total = assertions.length;
+            const passed = assertions.filter(t => t.status === 'passed').length;
+            const failed = assertions.filter(t => t.status === 'failed').length;
             lines.push(`| \`${name}\` | ${total} | ${passed} | ${failed} |`);
           }
 
           if (r.numFailedTests > 0) {
             lines.push('', '### Failures', '');
             for (const s of r.testResults) {
-              for (const t of s.testResults.filter(t => t.status === 'failed')) {
+              for (const t of (s.assertionResults || []).filter(t => t.status === 'failed')) {
                 lines.push(`**${t.fullName}**`);
                 lines.push('```');
                 lines.push((t.failureMessages || []).join('\n').slice(0, 1000));
