@@ -1,0 +1,71 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: tracker/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: tracker
+
+      - name: Run unit tests
+        id: jest
+        run: npx jest --testPathIgnorePatterns=integration --json --outputFile=test-results.json
+        working-directory: tracker
+
+      - name: Write test summary
+        if: always()
+        working-directory: tracker
+        run: |
+          node - <<'EOF'
+          const fs = require('fs');
+          const r = JSON.parse(fs.readFileSync('test-results.json', 'utf8'));
+
+          const lines = [
+            '## Test Results',
+            '',
+            `> ${r.numPassedTests} passed · ${r.numFailedTests} failed · ${r.numPendingTests} skipped · ${r.numTotalTests} total`,
+            '',
+            '| Suite | Tests | Passed | Failed |',
+            '|-------|------:|------:|------:|',
+          ];
+
+          for (const s of r.testResults) {
+            const name = s.name.replace(/.*\/tests\//, '');
+            const assertions = s.assertionResults || [];
+            const total = assertions.length;
+            const passed = assertions.filter(t => t.status === 'passed').length;
+            const failed = assertions.filter(t => t.status === 'failed').length;
+            lines.push(`| \`${name}\` | ${total} | ${passed} | ${failed} |`);
+          }
+
+          if (r.numFailedTests > 0) {
+            lines.push('', '### Failures', '');
+            for (const s of r.testResults) {
+              for (const t of (s.assertionResults || []).filter(t => t.status === 'failed')) {
+                lines.push(`**${t.fullName}**`);
+                lines.push('```');
+                lines.push((t.failureMessages || []).join('\n').slice(0, 1000));
+                lines.push('```');
+              }
+            }
+          }
+
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
+          EOF
