@@ -49,7 +49,8 @@ class GenericCrawler:
             browser = p.chromium.launch(headless=True)
             context = browser.new_context(
                 user_agent=self.headers["User-Agent"],
-                viewport={'width': 1280, 'height': 1024}
+                viewport={'width': 1280, 'height': 1024},
+                timezone_id="America/Los_Angeles"
             )
             page = context.new_page()
             page.goto(self.url)
