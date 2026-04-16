@@ -13,17 +13,23 @@ const transporter = nodemailer.createTransport({
 });
 
 async function sendEmail(to, subject, text) {
-  try {
-    const info = await transporter.sendMail({
-      from: process.env.SMTP_FROM || 'noreply@example.com',
-      to,
-      subject,
-      text
-    });
-    logger.info('Email sent', { to, subject, info });
-  } catch (err) {
-    logger.error('Failed to send email', { error: err.message });
-  }
+  const recipients = (Array.isArray(to) ? to : String(to).split(','))
+    .map(addr => addr.trim())
+    .filter(Boolean);
+
+  await Promise.all(recipients.map(async (recipient) => {
+    try {
+      const info = await transporter.sendMail({
+        from: process.env.SMTP_FROM || 'noreply@example.com',
+        to: recipient,
+        subject,
+        text
+      });
+      logger.info('Email sent', { to: recipient, subject, info });
+    } catch (err) {
+      logger.error('Failed to send email', { to: recipient, error: err.message });
+    }
+  }));
 }
 
 module.exports = { sendEmail };
