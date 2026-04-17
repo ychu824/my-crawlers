@@ -47,7 +47,7 @@ async function checkAll() {
     try {
       const results = await runCrawler(item);
       saveRunSnapshot(item, results, resultsDir);
-      processItem(item, results, state);
+      processItem(item, results, state, resultsDir);
     } catch (e) {
       logger.error('Error processing item', { item: item.name, error: e.message });
     }
@@ -93,7 +93,8 @@ if (fs.existsSync(envPath)) {
 const app = createApp(
   () => ({ config, configPath: activeConfigPath, state, lastRun: state._lastRun }),
   reloadEnv,
-  () => gcLogs(resultsDir)
+  () => gcLogs(resultsDir),
+  resultsDir
 );
 startServer(app);
 

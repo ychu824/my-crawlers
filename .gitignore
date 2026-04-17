@@ -19,6 +19,9 @@ output/
 
 # tracker node artifacts
 tracker/node_modules/
+
+# dashboard node_modules (build output in tracker/public/ is committed)
+dashboard/node_modules/
 tracker/logs/
 tracker/state.json
 tracker/config.local.json
