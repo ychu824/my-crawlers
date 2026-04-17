@@ -3,9 +3,11 @@ Crawlers for my daily life, (evo, gun.deals, King County CPL appointment impleme
 
 ## 1. Setup
 
-1. (Linux/macOS) create & activate a virtualenv:
+1. Create & activate a virtualenv:
    ```bash
+   # Ubuntu/Debian only — skip if python3 -m venv already works
    sudo apt-get install -y python3.12-venv
+
    python3 -m venv venv && source venv/bin/activate
    ```
 
