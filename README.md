@@ -3,9 +3,11 @@ Crawlers for my daily life, (evo, gun.deals, King County CPL appointment impleme
 
 ## 1. Setup
 
-1. (Linux/macOS) create & activate a virtualenv:
+1. Create & activate a virtualenv:
    ```bash
+   # Ubuntu/Debian only — skip if python3 -m venv already works
    sudo apt-get install -y python3.12-venv
+
    python3 -m venv venv && source venv/bin/activate
    ```
 
@@ -37,6 +39,9 @@ python main.py --config configs/kingcounty_cpl_config.json  # King County CPL ap
 - `--output` (optional): Path to save the output JSON file. If not specified, results are printed to stdout
 - `--search` (optional): Search for items by keyword (searches in name field by default)
 - `--search-field` (optional): Field to search in (default: name)
+- `--category` (optional): Fetch a specific category defined in the config (e.g. `handgun`)
+- `--brand` (optional): Filter results by brand name (case-insensitive)
+- `--score` (optional): Compute and sort results by deal score (good deals first)
 
 ### 2.1 Examples
 
