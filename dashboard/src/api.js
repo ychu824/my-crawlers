@@ -1,6 +1,6 @@
 import { MOCK_EVENTS, MOCK_STATUS } from './mocks/data';
 
-export const IS_MOCK = import.meta.env.VITE_API_MODE === 'mock';
+export const IS_MOCK = import.meta.env.DEV;
 
 export async function fetchStatus() {
   if (IS_MOCK) return MOCK_STATUS;
