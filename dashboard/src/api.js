@@ -11,7 +11,7 @@ export async function fetchStatus() {
 
 export async function fetchHistory(range) {
   if (IS_MOCK) {
-    const cutoffDays = range === 'year' ? 365 : 30;
+    const cutoffDays = { '3d': 3, '7d': 7, 'month': 30, 'year': 365 }[range] ?? 30;
     const cutoff = Date.now() - cutoffDays * 86400000;
     return { events: MOCK_EVENTS.filter(e => new Date(e.timestamp).getTime() >= cutoff) };
   }

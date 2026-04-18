@@ -53,8 +53,8 @@ function createApp(getStatus, reloadEnv, runGc, resultsDir) {
     if (!resultsDir) return res.status(503).json({ error: 'resultsDir not configured' });
     const { item, range } = req.query;
     let since;
-    if (range === 'month') since = new Date(Date.now() - 30 * 86400000).toISOString();
-    else if (range === 'year') since = new Date(Date.now() - 365 * 86400000).toISOString();
+    const RANGE_DAYS = { '3d': 3, '7d': 7, 'month': 30, 'year': 365 };
+    if (RANGE_DAYS[range]) since = new Date(Date.now() - RANGE_DAYS[range] * 86400000).toISOString();
     const events = queryEvents(resultsDir, { item, since });
     res.json({ events });
   });

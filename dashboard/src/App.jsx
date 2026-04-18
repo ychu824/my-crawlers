@@ -87,7 +87,7 @@ export default function App() {
 
           <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
             {[
-              { title: 'Total events', value: events.length, suffix: range === 'month' ? 'this month' : 'this year' },
+              { title: 'Total events', value: events.length, suffix: { '3d': 'past 3 days', '7d': 'past 7 days', 'month': 'this month', 'year': 'this year' }[range] },
               { title: 'CPL events', value: cplCount, color: ITEMS[0].color },
               { title: 'AFL events', value: aflCount, color: ITEMS[1].color },
             ].map((s, i) => (
@@ -113,6 +113,8 @@ export default function App() {
                   value={range}
                   onChange={setRange}
                   options={[
+                    { value: '3d',    label: 'Past 3 days' },
+                    { value: '7d',    label: 'Past 7 days' },
                     { value: 'month', label: 'Past 30 days' },
                     { value: 'year',  label: 'Past year' },
                   ]}
