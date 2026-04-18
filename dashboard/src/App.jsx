@@ -68,7 +68,7 @@ export default function App() {
         {IS_MOCK && (
           <Alert
             icon={<ExperimentOutlined />}
-            message="Mock mode — showing sample data. Run npm run dev:vm (with tunnel) for live VM data."
+            message="Mock mode — showing sample data. Deploy to VM for live data."
             type="warning"
             showIcon
             style={{ marginBottom: 16 }}
