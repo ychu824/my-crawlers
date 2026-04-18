@@ -7,6 +7,7 @@
 const fs   = require('fs');
 const path = require('path');
 const { appendEvent, HISTORY_FILENAME } = require('./appointment-history');
+const { parseAppointmentMessage }       = require('./processor');
 
 const args    = process.argv.slice(2);
 const daysIdx = args.indexOf('--days');
@@ -52,12 +53,13 @@ for (const { entries } of files) {
     if (isAvailable && !wasAvailable) {
       // Transition detected — only record if within the requested window
       if (ts >= cutoff) {
+        const message = parseAppointmentMessage(result.message || '');
         appendEvent(resultsDir, {
           item:      entry.item,
           timestamp: entry.timestamp,
-          message:   result.message || '',
+          message,
         });
-        console.log(`  + [${entry.timestamp}] ${entry.item} — ${result.message || '(no message)'}`);
+        console.log(`  + [${entry.timestamp}] ${entry.item} — ${message}`);
         harvested++;
       }
     }

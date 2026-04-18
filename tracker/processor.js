@@ -107,4 +107,4 @@ function processItem(item, results, state, resultsDir) {
   }
 }
 
-module.exports = { processItem };
+module.exports = { processItem, parseAppointmentMessage };
