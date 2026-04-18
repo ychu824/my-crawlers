@@ -7,7 +7,7 @@ import { ReloadOutlined, ExperimentOutlined } from '@ant-design/icons';
 import StatusCard from './components/StatusCard';
 import SubscribeForm from './components/SubscribeForm';
 import TimelineChart from './components/charts/TimelineChart';
-import AppointmentDatesChart from './components/charts/AppointmentDatesChart';
+import AppointmentCalendar from './components/charts/AppointmentCalendar';
 import ReleaseHourChart from './components/charts/ReleaseHourChart';
 import SlotTimesChart from './components/charts/SlotTimesChart';
 import { ITEMS } from './constants';
@@ -50,7 +50,7 @@ export default function App() {
 
   const tabItems = [
     { key: 'timeline', label: '📅 Availability Timeline', children: <TimelineChart events={events} range={range} /> },
-    { key: 'dates',    label: '📆 Appointment Dates',     children: <AppointmentDatesChart events={events} /> },
+    { key: 'dates',    label: '📆 Appointment Dates',     children: <AppointmentCalendar events={events} status={status} /> },
     { key: 'hours',    label: '🕐 Release Hours',          children: <ReleaseHourChart events={events} /> },
     { key: 'slots',    label: '🗓 Appointment Slots',      children: <SlotTimesChart events={events} /> },
   ];
