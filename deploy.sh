@@ -27,6 +27,12 @@ cd tracker
 npm install
 cd ..
 
+echo "Building dashboard..."
+cd dashboard
+npm install
+npm run build
+cd ..
+
 echo "Configuring systemd service..."
 sudo cp my-crawlers.service /etc/systemd/system/
 sudo systemctl daemon-reload
