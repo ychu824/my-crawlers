@@ -1,6 +1,6 @@
 export const ITEMS = [
   { key: 'cpl', label: 'CPL', full: 'Concealed Pistol License', color: '#1677ff' },
-  { key: 'afl', label: 'AFL', full: 'Armed Forces License',     color: '#722ed1' },
+  { key: 'afl', label: 'AFL', full: 'Alien Firearm License',    color: '#722ed1' },
 ];
 
 export const HOUR_LABELS = Array.from({ length: 24 }, (_, i) =>
