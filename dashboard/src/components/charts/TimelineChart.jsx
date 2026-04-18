@@ -17,7 +17,7 @@ export default function TimelineChart({ events, range }) {
   const { labels, datasets } = useMemo(() => {
     const now = Date.now();
     const isYear = range === 'year';
-    const count = isYear ? 52 : 30;
+    const count = isYear ? 52 : ({ '3d': 3, '7d': 7, 'month': 30 }[range] ?? 30);
 
     const labels = Array.from({ length: count }, (_, i) => {
       const d = new Date(now - (count - 1 - i) * (isYear ? 7 : 1) * 86400000);
