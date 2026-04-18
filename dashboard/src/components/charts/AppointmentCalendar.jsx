@@ -3,6 +3,15 @@ import { Calendar, Badge, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import { ITEMS } from '../../constants';
 
+// Blend a hex color 45% toward light gray — keeps hue but reads as "past/muted"
+function muteColor(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const mix = c => Math.round(c * 0.45 + 180 * 0.55).toString(16).padStart(2, '0');
+  return `#${mix(r)}${mix(g)}${mix(b)}`;
+}
+
 function parseApptDate(message) {
   if (!message) return null;
   // Matches "Wednesday July 15, 2026: ..." → "July 15, 2026"
@@ -73,8 +82,8 @@ export default function AppointmentCalendar({ events, status }) {
             <li key={`h${i}`}>
               <Tooltip title={`Released ${dayjs(e.timestamp).format('MMM D [at] h:mm A')}: ${e.message}`}>
                 <Badge
-                  color="#d9d9d9"
-                  text={<span style={{ fontSize: 10, color: '#bbb' }}>{item?.label || 'APT'}</span>}
+                  color={muteColor(item?.color || '#888888')}
+                  text={<span style={{ fontSize: 10, color: muteColor(item?.color || '#888888') }}>{item?.label || 'APT'}</span>}
                 />
               </Tooltip>
             </li>
