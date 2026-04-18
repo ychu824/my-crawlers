@@ -23,7 +23,6 @@ function addPending(email) {
   const subs = load();
   if (subs.find(s => s.email === email && s.confirmed)) return null;
   const token = crypto.randomBytes(20).toString('hex');
-  // Replace any existing pending entry for this email
   const rest = subs.filter(s => s.email !== email);
   rest.push({
     email,
@@ -44,8 +43,19 @@ function confirm(token) {
   if (new Date(sub.tokenExpiresAt) < new Date()) return false;
   sub.confirmed = true;
   sub.confirmedAt = new Date().toISOString();
+  sub.unsubscribeToken = crypto.randomBytes(20).toString('hex');
   delete sub.token;
   delete sub.tokenExpiresAt;
+  save(subs);
+  return true;
+}
+
+// Returns true if removed, false if token not found.
+function unsubscribe(token) {
+  const subs = load();
+  const idx = subs.findIndex(s => s.unsubscribeToken === token);
+  if (idx === -1) return false;
+  subs.splice(idx, 1);
   save(subs);
   return true;
 }
@@ -54,8 +64,13 @@ function confirmedEmails() {
   return load().filter(s => s.confirmed).map(s => s.email);
 }
 
+// Returns confirmed subscribers with their unsubscribe tokens for personalized emails.
+function confirmedSubscribers() {
+  return load().filter(s => s.confirmed).map(s => ({ email: s.email, unsubscribeToken: s.unsubscribeToken }));
+}
+
 function allSubscribers() {
   return load();
 }
 
-module.exports = { addPending, confirm, confirmedEmails, allSubscribers };
+module.exports = { addPending, confirm, unsubscribe, confirmedEmails, confirmedSubscribers, allSubscribers };

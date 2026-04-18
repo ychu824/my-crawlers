@@ -3,7 +3,7 @@ const path = require('path');
 const express = require('express');
 const logger = require('./logger');
 const { queryEvents } = require('./appointment-history');
-const { addPending, confirm, allSubscribers } = require('./subscribers');
+const { addPending, confirm, unsubscribe, allSubscribers } = require('./subscribers');
 const { sendEmail } = require('./email');
 
 function createApp(getStatus, reloadEnv, runGc, resultsDir) {
@@ -87,11 +87,12 @@ function createApp(getStatus, reloadEnv, runGc, resultsDir) {
 
   app.get('/confirm-subscription', (req, res) => {
     const ok = confirm(req.query.token || '');
-    if (ok) {
-      res.send(confirmationPage(true));
-    } else {
-      res.status(400).send(confirmationPage(false));
-    }
+    res.status(ok ? 200 : 400).send(confirmationPage(ok ? 'confirmed' : 'invalid'));
+  });
+
+  app.get('/unsubscribe', (req, res) => {
+    const ok = unsubscribe(req.query.token || '');
+    res.status(ok ? 200 : 400).send(confirmationPage(ok ? 'unsubscribed' : 'invalid'));
   });
 
   app.get('/subscribers', (req, res) => {
@@ -101,27 +102,28 @@ function createApp(getStatus, reloadEnv, runGc, resultsDir) {
   return app;
 }
 
-function confirmationPage(success) {
-  const title = success ? 'Subscription confirmed!' : 'Invalid or expired link';
-  const body = success
-    ? 'You will now receive email notifications when King County appointments become available.'
-    : 'This confirmation link is invalid or has expired. Please return to the dashboard and subscribe again.';
+function confirmationPage(state) {
+  const config = {
+    confirmed:    { color: '#52c41a', icon: '✓', title: 'Subscription confirmed!',   body: 'You will now receive email notifications when King County CPL or AFL appointments become available.' },
+    unsubscribed: { color: '#52c41a', icon: '✓', title: 'Unsubscribed',              body: 'You have been removed from the notification list. You can re-subscribe any time from the dashboard.' },
+    invalid:      { color: '#ff4d4f', icon: '✗', title: 'Invalid or expired link',   body: 'This link is invalid or has already been used. Please return to the dashboard and try again.' },
+  }[state] || config.invalid;
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>${title}</title>
+  <title>${config.title}</title>
   <style>
     body { font-family: sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f5f5f5; }
     .card { background: white; border-radius: 8px; padding: 40px; max-width: 480px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
-    h2 { color: ${success ? '#52c41a' : '#ff4d4f'}; }
+    h2 { color: ${config.color}; }
     a { color: #1677ff; text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="card">
-    <h2>${success ? '✓' : '✗'} ${title}</h2>
-    <p>${body}</p>
+    <h2>${config.icon} ${config.title}</h2>
+    <p>${config.body}</p>
     <a href="/">← Back to dashboard</a>
   </div>
 </body>

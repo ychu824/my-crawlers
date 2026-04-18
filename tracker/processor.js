@@ -1,7 +1,7 @@
 const logger = require('./logger');
 const { sendEmail } = require('./email');
 const { appendEvent } = require('./appointment-history');
-const { confirmedEmails } = require('./subscribers');
+const { confirmedSubscribers } = require('./subscribers');
 
 const PRICE_SUBJECT = process.env.EMAIL_PRICE_SUBJECT || 'Price alert: {{item}}';
 const PRICE_BODY = process.env.EMAIL_PRICE_BODY ||
@@ -79,13 +79,22 @@ function processAppointmentItem(item, results, state, resultsDir) {
     // Record and notify only on transition (no → yes) to avoid duplicates
     if (!wasAvailable) {
       if (resultsDir) appendEvent(resultsDir, { item: item.name, message });
+      const port = process.env.TRACKER_PORT || 3001;
+      const baseUrl = process.env.TRACKER_BASE_URL || `http://localhost:${port}`;
+      const vars = { item: item.name, message };
+      const subject = render(APPT_SUBJECT, vars);
+      const bodyBase = render(APPT_BODY, vars);
+
+      // NOTIFY_EMAIL addresses (admin-configured) get one combined email
       const base = process.env.NOTIFY_EMAIL
         ? process.env.NOTIFY_EMAIL.split(',').map(e => e.trim()).filter(Boolean)
         : [];
-      const recipients = [...new Set([...base, ...confirmedEmails()])];
-      if (recipients.length) {
-        const vars = { item: item.name, message };
-        sendEmail(recipients, render(APPT_SUBJECT, vars), render(APPT_BODY, vars));
+      if (base.length) sendEmail(base, subject, bodyBase);
+
+      // Web subscribers get individual emails with a personalized unsubscribe link
+      for (const { email, unsubscribeToken } of confirmedSubscribers()) {
+        const unsubUrl = `${baseUrl}/unsubscribe?token=${unsubscribeToken}`;
+        sendEmail(email, subject, `${bodyBase}\n\n---\nTo stop receiving these alerts: ${unsubUrl}`);
       }
     }
   } else {

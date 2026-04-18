@@ -9,8 +9,7 @@ WorkingDirectory=/home/azureuser/my-crawlers
 ExecStart=/usr/bin/node tracker/index.js
 Restart=always
 Environment=NODE_ENV=production
-# SMTP and other secrets should be provided via an EnvironmentFile or GitHub Secrets
-# EnvironmentFile=/home/azureuser/my-crawlers/.env
+EnvironmentFile=/home/azureuser/my-crawlers/.env
 
 [Install]
 WantedBy=multi-user.target
