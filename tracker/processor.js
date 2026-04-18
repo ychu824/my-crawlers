@@ -1,7 +1,8 @@
 const logger = require('./logger');
 const { sendEmail } = require('./email');
+const { appendEvent } = require('./appointment-history');
+const { confirmedSubscribers } = require('./subscribers');
 
-// Default templates — override via env vars if desired
 const PRICE_SUBJECT = process.env.EMAIL_PRICE_SUBJECT || 'Price alert: {{item}}';
 const PRICE_BODY = process.env.EMAIL_PRICE_BODY ||
   '{{item}} price dropped from {{oldPrice}} to {{newPrice}}.';
@@ -10,27 +11,18 @@ const APPT_SUBJECT = process.env.EMAIL_APPT_SUBJECT || 'Appointment available: {
 const APPT_BODY = process.env.EMAIL_APPT_BODY ||
   '{{item}} has appointments available!\n\n{{message}}';
 
-/**
- * Simple template renderer — replaces {{key}} placeholders with values.
- */
 function render(template, vars) {
-  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => {
-    return vars[key] !== undefined ? String(vars[key]) : `{{${key}}}`;
-  });
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key) =>
+    vars[key] !== undefined ? String(vars[key]) : `{{${key}}}`
+  );
 }
 
-/**
- * Process price-tracking items — detect drops and notify.
- */
 function processPriceItem(item, results, state) {
   let currentPrice = null;
   results.forEach(r => {
     if (r.price) {
-      const m = r.price.replace(/[^0-9.]/g, '');
-      const p = parseFloat(m);
-      if (!isNaN(p) && (currentPrice === null || p < currentPrice)) {
-        currentPrice = p;
-      }
+      const p = parseFloat(r.price.replace(/[^0-9.]/g, ''));
+      if (!isNaN(p) && (currentPrice === null || p < currentPrice)) currentPrice = p;
     }
   });
 
@@ -57,28 +49,21 @@ function processPriceItem(item, results, state) {
 function parseAppointmentMessage(raw) {
   if (!raw) return 'Check the booking page for details.';
 
-  // extract everything after "Please select the day..."
   const selectMatch = raw.match(/Please select the day[^.]*\.([\s\S]*)/i);
   if (!selectMatch) return raw;
 
   const body = selectMatch[1].trim();
-  // split on <> separator (QLess uses this between date and times)
   const parts = body.split('<>').map(s => s.trim()).filter(Boolean);
   if (parts.length < 2) return body || raw;
 
   const date = parts[0];
-  // times are concatenated without separator — split on AM/PM boundaries
   const timesRaw = parts.slice(1).join(' ');
   const times = timesRaw.match(/\d+:\d+\s*(AM|PM)/gi) || [timesRaw];
 
   return `${date}: ${times.join(', ')}`;
 }
 
-/**
- * Process appointment-tracking items — notify when slots open up.
- */
-function processAppointmentItem(item, results, state) {
-  // results is typically a single-element array with field values
+function processAppointmentItem(item, results, state, resultsDir) {
   const result = results[0] || {};
   const available = (result.appointments_available || '').toLowerCase();
   const rawMessage = result.message || result.appointments_available || '';
@@ -86,37 +71,49 @@ function processAppointmentItem(item, results, state) {
 
   const stateEntry = state[item.name] || {};
   const wasAvailable = stateEntry.lastStatus === 'yes';
-
-  // treat both "yes" and "unknown" as potentially available — better to
-  // over-notify than miss a real appointment window
   const isAvailable = available === 'yes' || available === 'unknown';
 
   if (isAvailable) {
     logger.info('Appointments detected', { item: item.name, status: available, message });
-    // only notify on transition (not-available → available) to avoid spam
-    if (!wasAvailable && process.env.NOTIFY_EMAIL) {
+
+    // Record and notify only on transition (no → yes) to avoid duplicates
+    if (!wasAvailable) {
+      if (resultsDir) appendEvent(resultsDir, { item: item.name, message });
+      const port = process.env.TRACKER_PORT || 3001;
+      const baseUrl = process.env.TRACKER_BASE_URL || `http://localhost:${port}`;
       const vars = { item: item.name, message };
-      sendEmail(process.env.NOTIFY_EMAIL, render(APPT_SUBJECT, vars), render(APPT_BODY, vars));
+      const subject = render(APPT_SUBJECT, vars);
+      const bodyBase = render(APPT_BODY, vars);
+
+      // NOTIFY_EMAIL addresses (admin-configured) get one combined email
+      const base = process.env.NOTIFY_EMAIL
+        ? process.env.NOTIFY_EMAIL.split(',').map(e => e.trim()).filter(Boolean)
+        : [];
+      if (base.length) sendEmail(base, subject, bodyBase);
+
+      // Web subscribers get individual emails with a personalized unsubscribe link
+      for (const { email, unsubscribeToken } of confirmedSubscribers()) {
+        const unsubUrl = `${baseUrl}/unsubscribe?token=${unsubscribeToken}`;
+        sendEmail(email, subject, `${bodyBase}\n\n---\nTo stop receiving these alerts: ${unsubUrl}`);
+      }
     }
   } else {
     logger.info('No appointments available', { item: item.name, status: available });
   }
 
-  state[item.name] = { lastStatus: isAvailable ? 'yes' : available, lastMessage: message, lastChecked: new Date().toISOString() };
+  state[item.name] = {
+    lastStatus: isAvailable ? 'yes' : available,
+    lastMessage: message,
+    lastChecked: new Date().toISOString(),
+  };
 }
 
-/**
- * Route to the correct processor based on item type.
- * Items with an "appointments_available" field in their config are treated as
- * appointment trackers; everything else is a price tracker.
- */
-function processItem(item, results, state) {
-  const isAppointment = item.appointment_mode;
-  if (isAppointment) {
-    processAppointmentItem(item, results, state);
+function processItem(item, results, state, resultsDir) {
+  if (item.appointment_mode) {
+    processAppointmentItem(item, results, state, resultsDir);
   } else {
     processPriceItem(item, results, state);
   }
 }
 
-module.exports = { processItem };
+module.exports = { processItem, parseAppointmentMessage };

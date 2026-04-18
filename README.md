@@ -144,6 +144,19 @@ export PYTHON=/usr/bin/python3   # optional override for deploy
 ./start-tracker.sh
 ```
 
+3. Build and optionally develop the dashboard:
+
+```bash
+# One-time build (output goes to tracker/public/, served automatically by the tracker)
+cd dashboard && npm install && npm run build
+
+# Live dev server with hot reload (proxies API calls to the tracker at :3001)
+cd dashboard && npm run dev
+# Then open http://localhost:5173
+```
+
+The production dashboard is served at `http://localhost:3001` by the tracker's Express server once built.
+
 The service auto-loads `.env` from the project root via `dotenv`. Environment
 variables set in the shell still take precedence over `.env` values.
 

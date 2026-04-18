@@ -19,6 +19,10 @@ output/
 
 # tracker node artifacts
 tracker/node_modules/
+
+# dashboard node_modules and build output (rebuilt by deploy.sh / npm run build)
+dashboard/node_modules/
+tracker/public/
 tracker/logs/
 tracker/state.json
 tracker/config.local.json
