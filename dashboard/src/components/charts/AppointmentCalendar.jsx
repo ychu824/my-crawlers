@@ -31,13 +31,22 @@ export default function AppointmentCalendar({ events, status }) {
   const today = dayjs().startOf('day');
 
   const histMap = useMemo(() => {
-    const map = {};
+    // Keep only the most recent release event per item per appointment date.
+    // The same slot can go no→yes multiple times (booking cancelled and re-released)
+    // but the calendar should show the slot once, not once per release cycle.
+    const map = {}; // date → { itemName → event }
     for (const e of events) {
       const key = parseApptDate(e.message);
       if (!key) continue;
-      (map[key] = map[key] || []).push(e);
+      if (!map[key]) map[key] = {};
+      const prev = map[key][e.item];
+      if (!prev || new Date(e.timestamp) > new Date(prev.timestamp)) {
+        map[key][e.item] = e;
+      }
     }
-    return map;
+    return Object.fromEntries(
+      Object.entries(map).map(([k, v]) => [k, Object.values(v)])
+    );
   }, [events]);
 
   const currentMap = useMemo(() => {
