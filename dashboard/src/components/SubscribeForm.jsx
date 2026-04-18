@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Input, Button, Alert, Typography, Space } from 'antd';
+import { Card, Input, Button, Alert, Typography } from 'antd';
+import { subscribe, IS_MOCK } from '../api';
 
 const { Title, Paragraph } = Typography;
 
@@ -13,18 +14,13 @@ export default function SubscribeForm() {
     setBusy(true);
     setResult(null);
     try {
-      const res  = await fetch('/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim() }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
+      const data = await subscribe(email.trim());
+      if (!data.ok) {
         setResult({ type: 'error', message: data.message || 'Something went wrong.' });
       } else if (data.already) {
         setResult({ type: 'info', message: 'This email is already subscribed.' });
       } else {
-        setResult({ type: 'success', message: 'Check your inbox for a confirmation link.' });
+        setResult({ type: 'success', message: data.message || 'Check your inbox for a confirmation link.' });
         setEmail('');
       }
     } catch {
@@ -40,22 +36,21 @@ export default function SubscribeForm() {
         🔔 Get notified when appointments open
       </Title>
       <Paragraph type="secondary" style={{ marginBottom: 16 }}>
-        Enter your email and we'll send a confirmation link. You'll get an alert the
-        moment CPL or AFL slots become available.
+        {IS_MOCK
+          ? 'Subscribe form works in mock mode — no emails will actually be sent.'
+          : "Enter your email and we'll send a confirmation link. You'll get an alert the moment CPL or AFL slots become available."}
       </Paragraph>
-      <Space.Compact style={{ width: '100%', maxWidth: 440 }}>
-        <Input
-          placeholder="your@email.com"
-          type="email"
-          value={email}
-          size="large"
-          onChange={(e) => setEmail(e.target.value)}
-          onPressEnter={handleSubmit}
-        />
-        <Button type="primary" size="large" loading={busy} onClick={handleSubmit}>
-          Subscribe
-        </Button>
-      </Space.Compact>
+      <Input.Search
+        placeholder="your@email.com"
+        enterButton="Subscribe"
+        size="large"
+        type="email"
+        value={email}
+        loading={busy}
+        style={{ maxWidth: 440 }}
+        onChange={e => setEmail(e.target.value)}
+        onSearch={handleSubmit}
+      />
       {result && (
         <Alert
           type={result.type}

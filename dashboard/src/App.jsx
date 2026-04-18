@@ -1,25 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  ConfigProvider,
-  Row,
-  Col,
-  Card,
-  Tabs,
-  Select,
-  Button,
-  Statistic,
-  Typography,
-  Space,
-  Spin,
-  message as antdMessage,
+  ConfigProvider, Row, Col, Card, Tabs, Select, Button,
+  Statistic, Typography, Space, Spin, Alert, message as antdMessage,
 } from 'antd';
-import { ReloadOutlined } from '@ant-design/icons';
+import { ReloadOutlined, ExperimentOutlined } from '@ant-design/icons';
 import StatusCard from './components/StatusCard';
 import SubscribeForm from './components/SubscribeForm';
 import TimelineChart from './components/charts/TimelineChart';
 import ReleaseHourChart from './components/charts/ReleaseHourChart';
 import SlotTimesChart from './components/charts/SlotTimesChart';
 import { ITEMS } from './constants';
+import { IS_MOCK, fetchStatus, fetchHistory } from './api';
 
 const { Text } = Typography;
 
@@ -34,13 +25,9 @@ export default function App() {
   const fetchAll = useCallback(async (r = range) => {
     setLoading(true);
     try {
-      const [sRes, hRes] = await Promise.all([
-        fetch('/status'),
-        fetch(`/appointment-history?range=${r}`),
-      ]);
-      setStatus(await sRes.json());
-      const { events: evts } = await hRes.json();
-      setEvents(evts || []);
+      const [s, h] = await Promise.all([fetchStatus(), fetchHistory(r)]);
+      setStatus(s);
+      setEvents(h.events || []);
       setLastFetch(new Date());
     } catch {
       msgApi.error('Failed to load data from tracker');
@@ -53,31 +40,17 @@ export default function App() {
 
   function stateFor(itemKey) {
     if (!status?.state) return null;
-    const key = Object.keys(status.state).find((k) =>
-      k.toLowerCase().includes(itemKey)
-    );
+    const key = Object.keys(status.state).find(k => k.toLowerCase().includes(itemKey));
     return key ? status.state[key] : null;
   }
 
-  const cplCount = events.filter((e) => e.item.toLowerCase().includes('cpl')).length;
-  const aflCount = events.filter((e) => e.item.toLowerCase().includes('afl')).length;
+  const cplCount = events.filter(e => e.item.toLowerCase().includes('cpl')).length;
+  const aflCount = events.filter(e => e.item.toLowerCase().includes('afl')).length;
 
   const tabItems = [
-    {
-      key: 'timeline',
-      label: '📅 Availability Timeline',
-      children: <TimelineChart events={events} range={range} />,
-    },
-    {
-      key: 'hours',
-      label: '🕐 Release Hours',
-      children: <ReleaseHourChart events={events} />,
-    },
-    {
-      key: 'slots',
-      label: '🗓 Appointment Slots',
-      children: <SlotTimesChart events={events} />,
-    },
+    { key: 'timeline', label: '📅 Availability Timeline', children: <TimelineChart events={events} range={range} /> },
+    { key: 'hours',    label: '🕐 Release Hours',          children: <ReleaseHourChart events={events} /> },
+    { key: 'slots',    label: '🗓 Appointment Slots',      children: <SlotTimesChart events={events} /> },
   ];
 
   return (
@@ -92,10 +65,20 @@ export default function App() {
       </div>
 
       <div className="content">
+        {IS_MOCK && (
+          <Alert
+            icon={<ExperimentOutlined />}
+            message="Mock mode — showing sample data. Run npm run dev:vm (with tunnel) for live VM data."
+            type="warning"
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+        )}
+
         <Spin spinning={loading} tip="Loading…" size="large">
 
           <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
-            {ITEMS.map((item) => (
+            {ITEMS.map(item => (
               <Col xs={24} sm={12} key={item.key}>
                 <StatusCard item={item} stateEntry={stateFor(item.key)} />
               </Col>
@@ -135,11 +118,7 @@ export default function App() {
                   ]}
                   style={{ width: 140 }}
                 />
-                <Button
-                  icon={<ReloadOutlined />}
-                  size="small"
-                  onClick={() => fetchAll(range)}
-                >
+                <Button icon={<ReloadOutlined />} size="small" onClick={() => fetchAll(range)}>
                   Refresh
                 </Button>
               </Space>
@@ -154,7 +133,7 @@ export default function App() {
       </div>
 
       <div className="footer">
-        Tracker checks every 10 minutes · Data retained for 1 year
+        {IS_MOCK ? 'Mock mode' : 'Tracker checks every 10 minutes'} · Data retained for 1 year
       </div>
     </ConfigProvider>
   );
