@@ -76,12 +76,9 @@ function processAppointmentItem(item, results, state, resultsDir) {
   if (isAvailable) {
     logger.info('Appointments detected', { item: item.name, status: available, message });
 
-    if (resultsDir) {
-      appendEvent(resultsDir, { item: item.name, message });
-    }
-
-    // Notify only on transition to avoid spam
+    // Record and notify only on transition (no → yes) to avoid duplicates
     if (!wasAvailable) {
+      if (resultsDir) appendEvent(resultsDir, { item: item.name, message });
       const base = process.env.NOTIFY_EMAIL
         ? process.env.NOTIFY_EMAIL.split(',').map(e => e.trim()).filter(Boolean)
         : [];
