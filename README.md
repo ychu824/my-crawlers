@@ -120,12 +120,15 @@ small HTTP API so local agents can query logs or status.
 |------|---------------|
 | `tracker/index.js` | Orchestrator — config loading, state, cron scheduling, startup |
 | `tracker/crawler.js` | Spawns the Python crawler subprocess |
-| `tracker/processor.js` | Price comparison and email alert logic |
+| `tracker/processor.js` | Price comparison and appointment alert logic |
 | `tracker/snapshot.js` | Writes timestamped JSON result files to `output/tracker/` |
 | `tracker/gc.js` | Garbage collection for logs and old snapshots |
-| `tracker/api.js` | Express HTTP server (`/status`, `/logs`) |
+| `tracker/api.js` | Express HTTP server (`/status`, `/logs`, `/appointment-history`, `/subscribe`, `/unsubscribe`) |
 | `tracker/logger.js` | Winston logger configuration |
 | `tracker/email.js` | Email sender via nodemailer |
+| `tracker/appointment-history.js` | Long-term appointment event log (1-year retention) |
+| `tracker/subscribers.js` | Email subscriber management with confirmation tokens |
+| `tracker/backfill-history.js` | One-shot script to seed history from existing snapshots |
 
 ### 3.2 Setup
 
@@ -223,9 +226,39 @@ curl -s http://localhost:3001/status
 The `/status` response includes `configPath`, so you can verify which config file
 the tracker actually loaded.
 
-### 3.4 Email Notifications
+### 3.4 Appointment History
 
-Configure email in `.env` (or export the variables):
+When the tracker detects a no→yes availability transition it appends a record to `output/tracker/appointment-events.json`. This log is retained for **1 year** — the GC harvests events from expiring snapshots before deleting them, so history survives the 3-day snapshot window.
+
+**Backfill from existing snapshots** (useful after first deploy):
+
+```bash
+# Backfill the past 3 days (default)
+node tracker/backfill-history.js
+
+# Backfill a longer window
+node tracker/backfill-history.js --days 30
+```
+
+The script replays snapshots in chronological order and records only genuine no→yes transitions (same logic as the live processor), so re-running it is safe — duplicates are skipped.
+
+**Query via API:**
+
+```bash
+# All events in the past 30 days
+curl "http://localhost:3001/appointment-history?range=month"
+
+# Past 7 days, CPL only
+curl "http://localhost:3001/appointment-history?range=7d&item=CPL"
+```
+
+Supported range values: `3d`, `7d`, `month`, `year`.
+
+---
+
+### 3.5 Email Notifications
+
+Configure email in `.env`:
 
 ```bash
 # Gmail with App Password (recommended for personal use)
@@ -235,11 +268,16 @@ SMTP_SECURE=true
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=xxxx-xxxx-xxxx-xxxx   # Google App Password (not your login password)
 SMTP_FROM=your-email@gmail.com
-NOTIFY_EMAIL=recipient@example.com   # can be any address, comma-separate for multiple
+NOTIFY_EMAIL=recipient@example.com   # admin address(es), comma-separated
+
+# Public URL of the tracker — used in confirmation and unsubscribe links
+TRACKER_BASE_URL=http://YOUR_DOMAIN_OR_IP:3001
 ```
 
 To generate a Gmail App Password: enable 2‑Step Verification, then visit
 <https://myaccount.google.com/apppasswords>.
+
+> **Important:** `TRACKER_BASE_URL` must be reachable from outside the VM (i.e. the port must be open in Azure NSG) so that confirmation and unsubscribe links in emails work. See [Deployment](#deployment-to-azure-vm).
 
 **When are emails sent?**
 
@@ -261,10 +299,31 @@ EMAIL_APPT_BODY={{item}} has appointments available!\n\n{{message}}
 ```
 
 By default each crawler run has a 2‑minute timeout, so a blocked site won’t hang the
-entire schedule.  Timeout errors appear in the log and the tracker moves to the
+entire schedule. Timeout errors appear in the log and the tracker moves to the
 next item automatically.
 
-### 3.5 Schedule
+### 3.6 Web Subscriptions
+
+Users can subscribe for appointment alerts directly from the dashboard without any admin action.
+
+**Flow:**
+1. User enters their email in the "Get notified" form on the dashboard
+2. A confirmation email is sent with a link valid for 24 hours
+3. User clicks the link → subscription is confirmed
+4. On the next availability transition, they receive an alert email with a personal **Unsubscribe** link at the bottom
+
+**Subscription API endpoints:**
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /subscribe` | Submit an email address; sends confirmation email |
+| `GET /confirm-subscription?token=` | Confirms the subscription |
+| `GET /unsubscribe?token=` | Removes the subscriber |
+| `GET /subscribers` | Lists all subscribers (admin use) |
+
+Subscriber data is stored in `tracker/subscribers.json` on the VM (not committed to git).
+
+### 3.8 Schedule
 
 The crawl frequency and GC schedule are configurable via `.env`:
 
@@ -285,7 +344,7 @@ Common cron patterns:
 | `*/30 * * * *` | Every 30 minutes |
 | `0 * * * *` | Every hour |
 
-### 3.6 Log Garbage Collection
+### 3.9 Log Garbage Collection
 
 A built-in GC runs daily (configurable via `TRACKER_GC_CRON`) to prevent unbounded log growth:
 
@@ -298,7 +357,7 @@ The retention period defaults to **3 days** and can be configured via environmen
 LOG_RETENTION_DAYS=7   # keep 7 days of logs instead of the default 3
 ```
 
-### 3.7 Logs & diagnostics
+### 3.10 Logs & diagnostics
 
 Logs are written to `tracker/logs/tracker.log` in JSON format.  To inspect
 recent entries use the HTTP API:
@@ -318,6 +377,55 @@ To inspect the latest snapshots:
 ls -lt output/tracker | head
 cat output/tracker/<latest-file>.json
 ```
+
+## 4. Appointment Trends Dashboard
+
+A React + Ant Design dashboard served by the tracker at `http://<your-host>:3001`.
+
+### 4.1 Running locally (mock data)
+
+```bash
+cd dashboard
+npm install
+npm run dev        # opens http://localhost:5173 with sample data
+```
+
+The dev server uses `import.meta.env.DEV` to detect development mode and injects mock CPL/AFL events so all charts are populated without a live VM connection.
+
+### 4.2 Production build
+
+```bash
+cd dashboard && npm run build
+# Output goes to tracker/public/ — served automatically by the tracker's Express server
+```
+
+`deploy.sh` runs this automatically on every deployment.
+
+### 4.3 Dashboard features
+
+| Tab | Description |
+|-----|-------------|
+| **Availability Timeline** | Bar chart of no→yes transitions per day/week over the selected range |
+| **Appointment Dates** | Monthly calendar marking appointment slots — active slots in brand color, historical in muted color, past dates with strikethrough |
+| **Release Hours** | Histogram of what hour of day slots are typically released |
+| **Appointment Slots** | Which specific appointment times (e.g. 10:00 AM) appear most often |
+
+**Range selector:** Past 3 days / 7 days / 30 days / 1 year — applies to all trend charts.
+
+**Email subscription form** at the bottom of the page — see [section 3.6](#36-web-subscriptions).
+
+### 4.4 First-time data seeding
+
+After deploying for the first time, run the backfill script to populate history from existing snapshots:
+
+```bash
+# On the VM
+node tracker/backfill-history.js --days 3
+```
+
+Then refresh the dashboard — the trend charts will show data immediately.
+
+---
 
 ## Appendix
 
