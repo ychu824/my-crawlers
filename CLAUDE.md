@@ -45,6 +45,8 @@ node index.js
 ./deploy.sh
 ```
 
+Production dashboard/API: http://kingcounty-afl.westus2.cloudapp.azure.com:3001/
+
 ## Architecture
 
 Dual-language system: **Python** handles crawling/scraping; **Node.js** orchestrates scheduling, state, and notifications.
@@ -89,6 +91,7 @@ Defined in `.env` (see `.env.example`). Key variables:
 - `SMTP_*` — Gmail SMTP; `NOTIFY_EMAIL` — comma-separated recipients
 - `EMAIL_PRICE_SUBJECT/BODY`, `EMAIL_APPT_SUBJECT/BODY` — template overrides using `{{item}}`, `{{oldPrice}}`, `{{newPrice}}`, `{{message}}`
 - `TRACKER_PORT`, `TRACKER_CRON`, `TRACKER_GC_CRON` — service settings
+- `TRACKER_BASE_URL` — public base URL for email confirm/unsubscribe links (production: `http://kingcounty-afl.westus2.cloudapp.azure.com:3001`; defaults to `http://localhost:$TRACKER_PORT`)
 - `LOG_RETENTION_DAYS` — snapshot/log GC (default: 3 days, cutoff is exclusive)
 - `PYTHON` — override Python interpreter path (useful for venv on deployed VM)
 

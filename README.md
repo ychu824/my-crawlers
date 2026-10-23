@@ -1,6 +1,8 @@
 # my-crawlers
 Crawlers for my daily life, (evo, gun.deals, King County CPL appointment implemented)
 
+**Live dashboard:** http://kingcounty-afl.westus2.cloudapp.azure.com:3001/
+
 ## 1. Setup
 
 1. Create & activate a virtualenv:
@@ -155,7 +157,9 @@ cd dashboard && npm run dev
 # Then open http://localhost:5173
 ```
 
-The production dashboard is served at `http://localhost:3001` by the tracker's Express server once built.
+The dashboard is served by the tracker's Express server once built: locally at
+`http://localhost:3001`, and in production at
+http://kingcounty-afl.westus2.cloudapp.azure.com:3001/.
 
 The service auto-loads `.env` from the project root via `dotenv`. Environment
 variables set in the shell still take precedence over `.env` values.
@@ -309,6 +313,10 @@ recent entries use the HTTP API:
 - `POST http://localhost:3001/reload-env` – hot-reload `.env` without restarting
 - `POST http://localhost:3001/gc` – manually trigger garbage collection (log trimming + snapshot cleanup)
 
+These examples use `localhost` for running on the VM itself. From elsewhere, use
+the public base URL instead, e.g.
+`curl -s http://kingcounty-afl.westus2.cloudapp.azure.com:3001/status`.
+
 Your local agent (or an ad-hoc `curl`) can poll these endpoints for useful
 information.
 
@@ -364,7 +372,7 @@ Use a dedicated CI deploy key without interactive passphrase prompts.
 
 #### GitHub Variables
 
-- `VM_HOST`: Azure VM public IP or hostname
+- `VM_HOST`: Azure VM public IP or hostname (e.g. `kingcounty-afl.westus2.cloudapp.azure.com`)
 - `VM_USERNAME`: SSH username (for your current setup: `azureuser`)
 - `VM_PORT` (optional): SSH port (`22` if omitted)
 - `DEPLOY_PATH` (optional): Absolute path to the repo on the VM (default: `/home/azureuser/my-crawlers`)
@@ -372,7 +380,7 @@ Use a dedicated CI deploy key without interactive passphrase prompts.
 SSH command for manual verification:
 
 ```bash
-ssh -i my-linux-pw.pem azureuser@xxx.xxx.xxx.xxx
+ssh -i my-linux-pw.pem azureuser@kingcounty-afl.westus2.cloudapp.azure.com
 ```
 
 Once configured, any push to `main` (or manual run from Actions tab) triggers deployment. The deployment script (`deploy.sh`) pulls latest code, updates dependencies, and restarts `my-crawlers.service`.
