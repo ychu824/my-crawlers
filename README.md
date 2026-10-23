@@ -1,6 +1,12 @@
 # my-crawlers
 Crawlers for my daily life, (evo, gun.deals, King County CPL appointment implemented)
 
+**Live dashboard:** http://kingcounty-afl.westus2.cloudapp.azure.com:3001/
+
+![Dashboard overview](docs/screenshots/dashboard-overview.png)
+
+*Screenshot uses the dashboard's built-in sample data (`npm run dev` mock mode), not live results. See [3.8 Dashboard preview](#38-dashboard-preview).*
+
 ## 1. Setup
 
 1. Create & activate a virtualenv:
@@ -155,7 +161,9 @@ cd dashboard && npm run dev
 # Then open http://localhost:5173
 ```
 
-The production dashboard is served at `http://localhost:3001` by the tracker's Express server once built.
+The dashboard is served by the tracker's Express server once built: locally at
+`http://localhost:3001`, and in production at
+http://kingcounty-afl.westus2.cloudapp.azure.com:3001/.
 
 The service auto-loads `.env` from the project root via `dotenv`. Environment
 variables set in the shell still take precedence over `.env` values.
@@ -309,6 +317,10 @@ recent entries use the HTTP API:
 - `POST http://localhost:3001/reload-env` – hot-reload `.env` without restarting
 - `POST http://localhost:3001/gc` – manually trigger garbage collection (log trimming + snapshot cleanup)
 
+These examples use `localhost` for running on the VM itself. From elsewhere, use
+the public base URL instead, e.g.
+`curl -s http://kingcounty-afl.westus2.cloudapp.azure.com:3001/status`.
+
 Your local agent (or an ad-hoc `curl`) can poll these endpoints for useful
 information.
 
@@ -318,6 +330,35 @@ To inspect the latest snapshots:
 ls -lt output/tracker | head
 cat output/tracker/<latest-file>.json
 ```
+
+### 3.8 Dashboard preview
+
+The React dashboard (`dashboard/`) shows the current CPL/AFL availability, event
+counts, and four chart tabs for the selected range (3 days to 1 year), plus a form
+to subscribe to email alerts. Live at
+http://kingcounty-afl.westus2.cloudapp.azure.com:3001/.
+
+> The screenshots below were captured from `npm run dev`, which serves built-in
+> sample data (hence the "Mock mode" banner), so the numbers are illustrative.
+
+**Appointment Dates** – calendar of when slots opened; past releases are struck through:
+
+![Appointment Dates tab](docs/screenshots/tab-dates.png)
+
+**Release Hours** – which hour of the day appointments tend to be released:
+
+![Release Hours tab](docs/screenshots/tab-release-hours.png)
+
+**Appointment Slots** – which appointment times are most often available:
+
+![Appointment Slots tab](docs/screenshots/tab-slots.png)
+
+**Mobile** – the layout is responsive:
+
+<img src="docs/screenshots/dashboard-mobile.png" alt="Dashboard on a phone" width="300">
+
+To regenerate them, run `cd dashboard && npm run dev` and capture
+`http://localhost:5173` at 1280px wide (390px for mobile).
 
 ## Appendix
 
@@ -364,7 +405,7 @@ Use a dedicated CI deploy key without interactive passphrase prompts.
 
 #### GitHub Variables
 
-- `VM_HOST`: Azure VM public IP or hostname
+- `VM_HOST`: Azure VM public IP or hostname (e.g. `kingcounty-afl.westus2.cloudapp.azure.com`)
 - `VM_USERNAME`: SSH username (for your current setup: `azureuser`)
 - `VM_PORT` (optional): SSH port (`22` if omitted)
 - `DEPLOY_PATH` (optional): Absolute path to the repo on the VM (default: `/home/azureuser/my-crawlers`)
@@ -372,7 +413,7 @@ Use a dedicated CI deploy key without interactive passphrase prompts.
 SSH command for manual verification:
 
 ```bash
-ssh -i my-linux-pw.pem azureuser@xxx.xxx.xxx.xxx
+ssh -i my-linux-pw.pem azureuser@kingcounty-afl.westus2.cloudapp.azure.com
 ```
 
 Once configured, any push to `main` (or manual run from Actions tab) triggers deployment. The deployment script (`deploy.sh`) pulls latest code, updates dependencies, and restarts `my-crawlers.service`.
