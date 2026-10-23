@@ -3,6 +3,10 @@ Crawlers for my daily life, (evo, gun.deals, King County CPL appointment impleme
 
 **Live dashboard:** http://kingcounty-afl.westus2.cloudapp.azure.com:3001/
 
+![Dashboard overview](docs/screenshots/dashboard-overview.png)
+
+*Screenshot uses the dashboard's built-in sample data (`npm run dev` mock mode), not live results. See [3.8 Dashboard preview](#38-dashboard-preview).*
+
 ## 1. Setup
 
 1. Create & activate a virtualenv:
@@ -326,6 +330,35 @@ To inspect the latest snapshots:
 ls -lt output/tracker | head
 cat output/tracker/<latest-file>.json
 ```
+
+### 3.8 Dashboard preview
+
+The React dashboard (`dashboard/`) shows the current CPL/AFL availability, event
+counts, and four chart tabs for the selected range (3 days to 1 year), plus a form
+to subscribe to email alerts. Live at
+http://kingcounty-afl.westus2.cloudapp.azure.com:3001/.
+
+> The screenshots below were captured from `npm run dev`, which serves built-in
+> sample data (hence the "Mock mode" banner), so the numbers are illustrative.
+
+**Appointment Dates** – calendar of when slots opened; past releases are struck through:
+
+![Appointment Dates tab](docs/screenshots/tab-dates.png)
+
+**Release Hours** – which hour of the day appointments tend to be released:
+
+![Release Hours tab](docs/screenshots/tab-release-hours.png)
+
+**Appointment Slots** – which appointment times are most often available:
+
+![Appointment Slots tab](docs/screenshots/tab-slots.png)
+
+**Mobile** – the layout is responsive:
+
+<img src="docs/screenshots/dashboard-mobile.png" alt="Dashboard on a phone" width="300">
+
+To regenerate them, run `cd dashboard && npm run dev` and capture
+`http://localhost:5173` at 1280px wide (390px for mobile).
 
 ## Appendix
 
